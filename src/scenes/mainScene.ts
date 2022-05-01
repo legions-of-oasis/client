@@ -1,11 +1,11 @@
 import Phaser from "phaser";
-import { CLAIM_SCENE, COIN, COIN_SPIN, IDLE, KNIGHT, MAIN_SCENE, MOVE, SIGNER, TILEMAP, TILESET } from "../utils/keys";
+import { CLAIM_SCENE, COIN, COIN_SPIN, IDLE, KNIGHT, MAIN_SCENE, MOVE, SIGNER, TILEMAP, TILESET } from "../lib/keys";
 import { ClientChannel } from "@geckos.io/client";
 import { SnapshotInterpolation, Vault } from "@geckos.io/snapshot-interpolation";
-import { getContract } from "../utils/contracts";
+import { getContract } from "../lib/eth/contracts";
 import { ethers } from "ethers";
-import { ClaimManagerERC721 } from "../contracts";
-import { addresses, contracts } from "../../../commons/contracts.mjs"
+import { ClaimManagerERC721 } from "../lib/eth/types";
+import { addresses, contracts } from "../../commons/contracts.mjs"
 
 export class MainScene extends Phaser.Scene {
     player?: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody

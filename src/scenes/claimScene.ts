@@ -1,9 +1,9 @@
 import { ethers } from 'ethers'
 import Phaser from 'phaser'
-import { ClaimVerifier } from '../contracts'
-import { getContract } from '../utils/contracts'
-import { BTN_GREY, CLAIM_SCENE, SIGNER, UPHEAVAL } from '../utils/keys'
-import { addresses, contracts } from '../../../commons/contracts.mjs'
+import { ClaimVerifier } from '../lib/eth/types'
+import { getContract } from '../lib/eth/contracts'
+import { BTN_GREY, CLAIM_SCENE, SIGNER, UPHEAVAL } from '../lib/keys'
+import { addresses, contracts } from '../../commons/contracts.mjs'
 
 export default class ClaimScene extends Phaser.Scene {
     button?: Phaser.GameObjects.RenderTexture

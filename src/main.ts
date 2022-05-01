@@ -1,7 +1,7 @@
 import './style.css'
 import Phaser from 'phaser'
 import { MainScene } from './scenes/mainScene'
-import { StartScene } from './scenes/startScene'
+import { StartScene } from './scenes/landingScene'
 import { Plugin as NineSlicePlugin } from 'phaser3-nineslice'
 import { ConnectScene } from './scenes/connectScene'
 import ClaimScene from './scenes/claimScene'

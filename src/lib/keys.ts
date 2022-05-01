@@ -15,7 +15,7 @@ export const COIN_SPIN = 'coinspin'
 //scenes
 export const MAIN_SCENE = 'mainscene'
 export const CONNECT_SCENE = 'connectscene'
-export const START_SCENE = 'startscene'
+export const LANDING_SCENE = 'landingscene'
 export const CLAIM_SCENE = 'claimscene'
 
 //ui

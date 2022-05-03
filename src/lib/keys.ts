@@ -1,27 +1,42 @@
 //sprites
-export const KNIGHT = 'knight'
-export const COIN = 'coin'
-export const PLAYER = 'player'
+export const sprites = {
+    KNIGHT: 'knight',
+    COIN: 'coin',
+}
 
-//tilemap
-export const TILESET = 'tileset'
-export const TILEMAP = 'tilemap'
+//tilemaps & tilesets
+export const tiles = {
+    DUNGEON_SET: 'dungeonset',
+    DUNGEON_MAP: 'dungeonmap'
+}
 
 //anims
-export const IDLE = 'idle'
-export const MOVE = 'move'
-export const COIN_SPIN = 'coinspin'
+export const anims = {
+    IDLE: 'idle',
+    MOVE: 'move',
+    COIN_SPIN: 'coinspin'
+}
 
 //scenes
-export const MAIN_SCENE = 'mainscene'
-export const CONNECT_SCENE = 'connectscene'
-export const LANDING_SCENE = 'landingscene'
-export const CLAIM_SCENE = 'claimscene'
+export const scenes = {
+    DUNGEON_SCENE: 'dungeonscene',
+    CONNECT_SCENE: 'connectscene',
+    LANDING_SCENE: 'landingscene',
+    CLAIM_SCENE: 'claimscene'
+}
 
-//ui
-export const UPHEAVAL = 'upheaval'
-export const BTN_GREY = 'btngrey'
-export const BTN_GREY_PRESSED = 'btngreypressed'
+//images
+export const images = {
+    BTN_GREY: 'btngrey',
+    BTN_GREY_PRESSED: 'btngreypressed'
+}
+
+//fonts
+export const fonts = {
+    UPHEAVAL: 'upheaval'
+}
 
 //global registry
-export const SIGNER = 'signer'
+export const globals = {
+    SIGNER: 'signer',
+}

@@ -2,7 +2,7 @@ import { ethers } from 'ethers'
 import Phaser from 'phaser'
 import { ClaimVerifier } from '../lib/eth/types'
 import { getContract } from '../lib/eth/contracts'
-import { BTN_GREY, CLAIM_SCENE, SIGNER, UPHEAVAL } from '../lib/keys'
+import { images, scenes, globals, fonts } from '../lib/keys'
 import { addresses, contracts } from '../../commons/contracts.mjs'
 
 export default class ClaimScene extends Phaser.Scene {
@@ -16,7 +16,7 @@ export default class ClaimScene extends Phaser.Scene {
     balance?: ethers.BigNumber
 
     constructor() {
-        super(CLAIM_SCENE)
+        super(scenes.CLAIM_SCENE)
     }
 
     init({ contract, balance }: { contract: string, balance: ethers.BigNumber }) {
@@ -25,9 +25,8 @@ export default class ClaimScene extends Phaser.Scene {
     }
 
     preload() {
-        this.load.bitmapFont(UPHEAVAL, '/fonts/upheaval.png', '/fonts/upheaval.xml')
-        this.load.image(BTN_GREY, '/ui/btn-grey.png')
-        this.signer = this.registry.get(SIGNER)
+        this.load.bitmapFont(fonts.UPHEAVAL, '/fonts/upheaval.png', '/fonts/upheaval.xml')
+        this.signer = this.registry.get(globals.SIGNER)
     }
 
     create() {
@@ -42,8 +41,8 @@ export default class ClaimScene extends Phaser.Scene {
         }
 
         //add components
-        this.button = this.add.nineslice(0, 0, 135, 18, BTN_GREY, [3, 3, 5, 3]).setOrigin(0.5, 0.5).setScale(3, 3).setInteractive()
-        this.text = this.add.bitmapText(0, 0, UPHEAVAL, text, 32).setOrigin(0.5, 0.5)
+        this.button = this.add.nineslice(0, 0, 135, 18, images.BTN_GREY, [3, 3, 5, 3]).setOrigin(0.5, 0.5).setScale(3, 3).setInteractive()
+        this.text = this.add.bitmapText(0, 0, fonts.UPHEAVAL, text, 32).setOrigin(0.5, 0.5)
         this.container = this.add.container(width * 0.5, height * 0.4, [this.button, this.text])
 
         //add event listeners

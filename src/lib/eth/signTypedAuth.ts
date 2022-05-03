@@ -5,7 +5,7 @@ const signTypedAuth = async (signer: JsonRpcSigner): Promise<{ sig: string, addr
 
     const address = await signer.getAddress()
 
-    const host = import.meta.env.VITE_HOST ? import.meta.env.VITE_HOST : "http://localhost"
+    const host = import.meta.env.VITE_HOST ? import.meta.env.VITE_HOST : "http://localhost:9208"
 
     //get challenge
     const res = await fetch(host + "/challenge", {

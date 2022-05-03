@@ -1,13 +1,13 @@
 import { geckos } from '@geckos.io/client'
 import { Scene } from 'phaser'
-import { CONNECT_SCENE, MAIN_SCENE } from '../lib/keys'
+import { scenes } from '../lib/keys'
 
 export class ConnectScene extends Scene {
 	sig?: string
 	address?: string
 
 	constructor() {
-		super(CONNECT_SCENE)
+		super(scenes.CONNECT_SCENE)
 	}
 
 	init({ sig, address }: { sig: string, address: string }) {
@@ -39,7 +39,7 @@ export class ConnectScene extends Scene {
 			channel.on('ready', (initialPos) => {
 				text.setText('connected!')
 				setTimeout(() => {
-					this.scene.start(MAIN_SCENE, { channel, initialPos })
+					this.scene.start(scenes.DUNGEON_SCENE, { channel, initialPos })
 				}, 500)
 			})
 		})

@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { CLAIM_SCENE, COIN, COIN_SPIN, IDLE, KNIGHT, MAIN_SCENE, MOVE, SIGNER, TILEMAP, TILESET } from "../lib/keys";
+import { scenes, anims, globals, tiles, sprites } from "../lib/keys";
 import { ClientChannel } from "@geckos.io/client";
 import { SnapshotInterpolation, Vault } from "@geckos.io/snapshot-interpolation";
 import { getContract } from "../lib/eth/contracts";
@@ -22,7 +22,7 @@ export class MainScene extends Phaser.Scene {
     signer?: ethers.providers.JsonRpcSigner
 
     constructor() {
-        super(MAIN_SCENE)
+        super(scenes.DUNGEON_SCENE)
     }
 
     init({ channel, initialPos }: { channel: ClientChannel, initialPos: Array<number> }) {
@@ -32,17 +32,17 @@ export class MainScene extends Phaser.Scene {
 
     preload() {
         //assets
-        this.load.spritesheet(KNIGHT, '/spritesheets/knight.png', { frameWidth: 15, frameHeight: 22 })
-        this.load.image(TILESET, '/tilemap/tileset.png')
-        this.load.tilemapTiledJSON(TILEMAP, '/tilemap/tilemap.json')
-        this.load.spritesheet(COIN, '/spritesheets/coin.png', { frameWidth: 6, frameHeight: 7 })
+        this.load.spritesheet(sprites.KNIGHT, '/spritesheets/knight.png', { frameWidth: 15, frameHeight: 22 })
+        this.load.image(tiles.DUNGEON_SET, '/tiles/dungeon.png')
+        this.load.tilemapTiledJSON(tiles.DUNGEON_MAP, '/tiles/dungeon.json')
+        this.load.spritesheet(sprites.COIN, '/spritesheets/coin.png', { frameWidth: 6, frameHeight: 7 })
 
         //inputs
         this.cursors = this.input.keyboard.createCursorKeys()
         this.wasd = this.input.keyboard.addKeys('W,S,A,D')
 
         //signer
-        this.signer = this.registry.get(SIGNER)
+        this.signer = this.registry.get(globals.SIGNER)
     }
 
     create() {
@@ -54,19 +54,19 @@ export class MainScene extends Phaser.Scene {
         this.playerVault = new Vault()
 
         //tilemap and tileset
-        const map = this.make.tilemap({ key: TILEMAP })
-        const tiles = map.addTilesetImage('dungeon-tileset', TILESET)
+        const map = this.make.tilemap({ key: tiles.DUNGEON_MAP })
+        const tileset = map.addTilesetImage('dungeon-tileset', tiles.DUNGEON_SET)
 
         //tilemap layers
-        const floor = map.createLayer('floor', tiles, 0, 0)
-        const walls = map.createLayer('walls', tiles, 0, 0)
-        const overhead = map.createLayer('overhead', tiles, 0, 0)
+        const floor = map.createLayer('floor', tileset, 0, 0)
+        const walls = map.createLayer('walls', tileset, 0, 0)
+        const overhead = map.createLayer('overhead', tileset, 0, 0)
 
         //star sprite
-        this.coin = this.physics.add.sprite(240, 70, COIN)
+        this.coin = this.physics.add.sprite(240, 70, sprites.COIN)
 
         //player sprite
-        this.player = this.physics.add.sprite(this.initialPos![0], this.initialPos![1], KNIGHT)
+        this.player = this.physics.add.sprite(this.initialPos![0], this.initialPos![1], sprites.KNIGHT)
 
         //camera
         const camera = this.cameras.main
@@ -75,25 +75,25 @@ export class MainScene extends Phaser.Scene {
 
         //anims
         this.anims.create({
-            key: IDLE,
+            key: sprites.KNIGHT + '-' + anims.IDLE,
             frameRate: 10,
-            frames: this.anims.generateFrameNumbers(KNIGHT, {
+            frames: this.anims.generateFrameNumbers(sprites.KNIGHT, {
                 start: 0,
                 end: 3
             })
         })
         this.anims.create({
-            key: MOVE,
+            key: sprites.KNIGHT + '-' + anims.MOVE,
             frameRate: 10,
-            frames: this.anims.generateFrameNumbers(KNIGHT, {
+            frames: this.anims.generateFrameNumbers(sprites.KNIGHT, {
                 start: 4,
                 end: 7
             })
         })
         this.anims.create({
-            key: COIN_SPIN,
+            key: anims.COIN_SPIN,
             frameRate: 10,
-            frames: this.anims.generateFrameNumbers(COIN, {
+            frames: this.anims.generateFrameNumbers(sprites.COIN, {
                 start: 0,
                 end: 3,
             }),
@@ -114,7 +114,7 @@ export class MainScene extends Phaser.Scene {
         this.physics.add.overlap(this.player, this.coin, () => this.collectCoin())
 
         //start anims
-        this.coin.anims.play(COIN_SPIN, true)
+        this.coin.anims.play(anims.COIN_SPIN, true)
 
         //server update handler
         this.channel?.on('update', (data: any) => {
@@ -123,8 +123,8 @@ export class MainScene extends Phaser.Scene {
 
         //claim handler
         this.channel?.on('claim', sig => {
-            this.scene.get(CLAIM_SCENE).data.set('sig', sig)
-            console.log(sig)
+            this.scene.get(scenes.CLAIM_SCENE).data.set('sig', sig)
+            console.log("packet signature: ", sig)
         })
 
         // pause physics when disconnected
@@ -186,14 +186,14 @@ export class MainScene extends Phaser.Scene {
             //animations
             if (velocity?.x != 0 || velocity.y != 0) {
                 this.player?.setFlipX(this.lastDirectionIsLeft)
-                this.player?.anims.play(MOVE, true)
+                this.player?.anims.play(sprites.KNIGHT + '-' + anims.MOVE, true)
             } else {
-                this.player?.anims.play(IDLE, true)
+                this.player?.anims.play(sprites.KNIGHT + '-' + anims.IDLE, true)
             }
         } else {
             //idle
             this.player?.setVelocity(0)
-            this.player?.anims.play(IDLE, true)
+            this.player?.anims.play(sprites.KNIGHT + '-' + anims.IDLE, true)
         }
 
         //client prediction
@@ -247,7 +247,7 @@ export class MainScene extends Phaser.Scene {
         }, 30000)
         this.coin?.disableBody(true, true)
         this.cameras.main.setAlpha(0.5)
-        this.scene.launch(CLAIM_SCENE, { contract: addresses.DUNGEON, balance: this.balance })
+        this.scene.launch(scenes.CLAIM_SCENE, { contract: addresses.DUNGEON, balance: this.balance })
         this.scene.sendToBack(this)
     }
 

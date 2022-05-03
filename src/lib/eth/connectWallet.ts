@@ -1,20 +1,12 @@
-import { JsonRpcSigner } from "@ethersproject/providers"
+import { JsonRpcSigner, Web3Provider } from "@ethersproject/providers"
 import WalletConnectProvider from "@walletconnect/web3-provider"
 import { ethers } from "ethers"
-import Web3Modal from "web3modal"
+import Web3Modal, { getProviderInfo } from "web3modal"
+import eventsCenter from "../eventsCenter"
 
-const connectWallet = async ({
-    onAccountsChanged,
-    onChainChanged,
-    onConnect,
-    onDisconnect
-}: {
-    onAccountsChanged: (accounts: string[]) => void,
-    onChainChanged: (chainId: number) => void,
-    onConnect: (chainId: number) => void,
-    onDisconnect: (code: number, message: string) => void,
-}
-): Promise<JsonRpcSigner> => {
+const targetChainId = '0xa4b'
+
+const connectWallet = async (): Promise<JsonRpcSigner> => {
     const providerOptions = {
         walletconnect: {
             package: WalletConnectProvider,
@@ -33,24 +25,50 @@ const connectWallet = async ({
 
     const provider = new ethers.providers.Web3Provider(instance)
 
-    provider.on('accountsChanged', (accounts: string[]) => {
-        onAccountsChanged(accounts)
-    })
+    registerEIP1193(provider)
 
-    provider.on('chainChanged', chainId => {
-        onChainChanged(chainId)
-    })
-
-    provider.on('connect', ({ chainId }) => {
-        onConnect(chainId)
-    })
-
-    provider.on('disconnect', ({ code, message }) => {
-        onDisconnect(code, message)
-    })
+    const chainId = await provider.send('eth_chainId', [])
+    if (chainId !== targetChainId) {
+        throw new Error('wrong chain')
+    }
 
     const signer = provider.getSigner()
     return signer
+}
+
+const registerEIP1193 = (provider: Web3Provider) => {
+    const { type } = getProviderInfo(provider)
+
+    if (type === 'injected' && window.ethereum) {
+        const { ethereum } = window
+
+        ethereum.on('accountsChanged', (accounts: string[]) => {
+            eventsCenter.emit('accountsChanged', accounts)
+        })
+        ethereum.on('connect', (info: { chainId: number }) => {
+            eventsCenter.emit('connect', info)
+        })
+        ethereum.on('disconnect', (error: { code: number, message: string }) => {
+            eventsCenter.emit('disconnect', error)
+        })
+        ethereum.on('chainChanged', (chainId: number) => {
+            eventsCenter.emit('chainChanged', chainId)
+        })
+        return
+    }
+
+    provider.on('accountsChanged', (accounts: string[]) => {
+        eventsCenter.emit('accountsChanged', accounts)
+    })
+    provider.on('connect', (info: { chainId: number }) => {
+        eventsCenter.emit('connect', info)
+    })
+    provider.on('disconnect', (error: { code: number, message: string }) => {
+        eventsCenter.emit('disconnect', error)
+    })
+    provider.on('chainChanged', (chainId: number) => {
+        eventsCenter.emit('chainChanged', chainId)
+    })
 }
 
 export default connectWallet

@@ -2,9 +2,9 @@ import { JsonRpcSigner, Web3Provider } from "@ethersproject/providers"
 import WalletConnectProvider from "@walletconnect/web3-provider"
 import { ethers } from "ethers"
 import Web3Modal, { getProviderInfo } from "web3modal"
-import eventsCenter from "../eventsCenter"
+import eventsCenter from "../utils/eventsCenter"
 
-const targetChainId = '0xa4b'
+const targetChainId = '0x7a69'
 
 const connectWallet = async (): Promise<JsonRpcSigner> => {
     const providerOptions = {
@@ -25,10 +25,11 @@ const connectWallet = async (): Promise<JsonRpcSigner> => {
 
     const provider = new ethers.providers.Web3Provider(instance)
 
-    registerEIP1193(provider)
+    registerListeners(provider)
 
     const chainId = await provider.send('eth_chainId', [])
     if (chainId !== targetChainId) {
+        console.log(chainId)
         throw new Error('wrong chain')
     }
 
@@ -36,7 +37,7 @@ const connectWallet = async (): Promise<JsonRpcSigner> => {
     return signer
 }
 
-const registerEIP1193 = (provider: Web3Provider) => {
+const registerListeners = (provider: Web3Provider) => {
     const { type } = getProviderInfo(provider)
 
     if (type === 'injected' && window.ethereum) {

@@ -1,6 +1,6 @@
 import { geckos } from '@geckos.io/client'
 import { Scene } from 'phaser'
-import { scenes } from '../lib/keys'
+import { scenes } from '../lib/utils/keys'
 
 export class ConnectScene extends Scene {
 	sig?: string

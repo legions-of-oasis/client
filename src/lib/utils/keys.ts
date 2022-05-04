@@ -40,3 +40,11 @@ export const fonts = {
 export const globals = {
     SIGNER: 'signer',
 }
+
+//events
+export const events = {
+    ACCOUNTS_CHANGED: 'accountsChanged',
+    CHAIN_CHANGED: 'chainChanged',
+    CONNECT: 'connect',
+    DISCONNECT: 'disconnect'
+}

@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { scenes, anims, globals, tiles, sprites } from "../lib/keys";
+import { scenes, anims, globals, tiles, sprites } from "../lib/utils/keys";
 import { ClientChannel } from "@geckos.io/client";
 import { SnapshotInterpolation, Vault } from "@geckos.io/snapshot-interpolation";
 import { getContract } from "../lib/eth/contracts";

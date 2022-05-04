@@ -2,7 +2,7 @@ import { ethers } from 'ethers'
 import Phaser from 'phaser'
 import { ClaimVerifier } from '../lib/eth/types'
 import { getContract } from '../lib/eth/contracts'
-import { images, scenes, globals, fonts } from '../lib/keys'
+import { images, scenes, globals, fonts } from '../lib/utils/keys'
 import { addresses, contracts } from '../../commons/contracts.mjs'
 
 export default class ClaimScene extends Phaser.Scene {

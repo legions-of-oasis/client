@@ -36,7 +36,7 @@ export class MainScene extends Phaser.Scene {
         this.load.image(tiles.DUNGEON_SET, '/tiles/dungeon.png')
         this.load.tilemapTiledJSON(tiles.DUNGEON_MAP, '/tiles/dungeon.json')
         this.load.spritesheet(sprites.COIN, '/spritesheets/coin.png', { frameWidth: 6, frameHeight: 7 })
-
+        
         //inputs
         this.cursors = this.input.keyboard.createCursorKeys()
         this.wasd = this.input.keyboard.addKeys('W,S,A,D')

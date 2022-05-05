@@ -26,7 +26,7 @@ export class ConnectScene extends Scene {
 
 		const channel = geckos({
 			url: host,
-			port: 443,
+			port: 9208,
 			authorization: `${this.address} ${this.sig}`,
 		})
 		

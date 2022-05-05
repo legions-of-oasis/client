@@ -7,9 +7,8 @@ import { Button } from "../lib/plugins/ui/Button"
 
 export class StartScene extends Phaser.Scene {
     button?: Button
-    text?: Phaser.GameObjects.BitmapText
-    container?: Phaser.GameObjects.Container
     signer?: ethers.providers.JsonRpcSigner
+    bg?: Phaser.GameObjects.Image
     chainId = 31337
 
     constructor() {
@@ -18,7 +17,9 @@ export class StartScene extends Phaser.Scene {
 
     preload() {
         this.load.bitmapFont(fonts.UPHEAVAL, '/fonts/upheaval.png', '/fonts/upheaval.xml')
-        this.load.image(images.BTN_GREY, '/ui/btn-grey.png')
+        this.load.image(images.BTN_LIGHTBROWN, '/ui/btn-lightbrown.png')
+        this.load.image(images.BTN_LIGHTBROWN_PRESSED, '/ui/btn-lightbrown-pressed.png')
+        this.load.image(images.SPLASH_SCREEN, '/ui/splash-screen.png')
     }
 
     create() {
@@ -29,44 +30,41 @@ export class StartScene extends Phaser.Scene {
         const { width, height } = this.scale
 
         //add components
-        // this.button = this.add.nineslice(0, 0, 100, 18, images.BTN_GREY, [3, 3, 5, 3]).setOrigin(0.5, 0.5).setScale(3, 3).setInteractive()
-        // this.text = this.add.bitmapText(0, 0, fonts.UPHEAVAL, 'connect wallet', 32).setOrigin(0.5, 0.5)
-        // this.container = this.add.container(width * 0.5, height * 0.5, [this.button, this.text])
+        this.bg = this.add.image(width * 0.5, height * 0.5, images.SPLASH_SCREEN)
+        this.fitBg(width, height)
 
         this.button = new Button({
             scene: this,
             text: 'connect wallet',
-            x: width * 0.5,
-            y: height * 0.5,
+            x: width * 0.33,
+            y: height * 0.6,
             width: 300,
             height: 54,
-            key: images.BTN_GREY
+            key: images.BTN_LIGHTBROWN
         })
         this.button.onClick(() => this.handleClick())
 
-        //add event listeners
-        // this.scale.on('resize', () => this.resize())
-        // this.button.on('pointerover', () => {
-        //     this.button?.setTint(0x44fff9)
-        // })
-        // this.button.on('pointerout', () => {
-        //     this.button?.clearTint()
-        // })
-        // this.button.on('pointerdown', () => {
-        //     this.button?.setTint(0x2aa19d)
-        // })
-        // this.button.on('pointerup', async () => {
-        //     this.button?.clearTint()
-
-        //     this.handleClick()
-        // })
+        //resize listener
+        this.scale.on('resize', () => this.resize())
+        
+        //add wallet listeners
         eventsCenter.on(events.ACCOUNTS_CHANGED, () => {this.reset()})
+        eventsCenter.on(events.CHAIN_CHANGED, () => {this.reset()})
     }
 
     resize() {
         //recenter on resize
         const { width, height } = this.scale
-        this.container?.setPosition(width * 0.5, height * 0.5)
+        this.button!.setPosition(width * 0.33, height * 0.6)
+        this.bg!.setPosition(width * 0.5, height * 0.5)
+        this.fitBg(width, height)
+    }
+
+    fitBg(width: number, height: number) {
+        const widthRatio = width / this.bg!.width
+        const heightRatio = height / this.bg!.height
+        const larger = widthRatio > heightRatio ? widthRatio : heightRatio
+        this.bg!.setScale(larger)
     }
 
     async handleClick() {
@@ -87,14 +85,14 @@ export class StartScene extends Phaser.Scene {
 
             this.signer = signer
             this.registry.set(globals.SIGNER, this.signer)
-            this.button!.text.setText('login')
+            this.button!.setText('login')
             return
         } catch (e: any) {
             if (e.message !== 'wrong chain') {
                 console.error(e)
                 return
             }
-            this.button!.text.setText('wrong chain')
+            this.button!.setText('wrong chain')
         }
     }
 

@@ -6,9 +6,10 @@ import { getContract } from "../lib/eth/contracts";
 import { ethers } from "ethers";
 import { ClaimManagerERC721 } from "../lib/eth/types";
 import { addresses, contracts } from "../../commons/contracts.mjs"
+import Player from "../lib/plugins/entities/characters/Player";
 
-export class MainScene extends Phaser.Scene {
-    player?: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody
+export class DungeonScene extends Phaser.Scene {
+    player?: Player
     coin?: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody
     cursors?: Phaser.Types.Input.Keyboard.CursorKeys
     wasd?: any
@@ -49,6 +50,9 @@ export class MainScene extends Phaser.Scene {
         //set bg color
         this.cameras.main.setBackgroundColor('0x171717')
 
+        //anims
+        this.createAnims()
+
         //snapshot interpolation
         this.SI = new SnapshotInterpolation(60)
         this.playerVault = new Vault()
@@ -66,39 +70,20 @@ export class MainScene extends Phaser.Scene {
         this.coin = this.physics.add.sprite(240, 70, sprites.COIN)
 
         //player sprite
-        this.player = this.physics.add.sprite(this.initialPos![0], this.initialPos![1], sprites.KNIGHT)
+        // this.player = this.physics.add.sprite(this.initialPos![0], this.initialPos![1], sprites.KNIGHT)
+        this.player = new Player({
+            scene: this,
+            x: this.initialPos![0],
+            y: this.initialPos![1],
+            key: sprites.KNIGHT,
+            speed: 80,
+            id: this.channel!.id!.toString()
+        })
 
         //camera
         const camera = this.cameras.main
         camera.zoom = 3
         camera.startFollow(this.player)
-
-        //anims
-        this.anims.create({
-            key: sprites.KNIGHT + '-' + anims.IDLE,
-            frameRate: 10,
-            frames: this.anims.generateFrameNumbers(sprites.KNIGHT, {
-                start: 0,
-                end: 3
-            })
-        })
-        this.anims.create({
-            key: sprites.KNIGHT + '-' + anims.MOVE,
-            frameRate: 10,
-            frames: this.anims.generateFrameNumbers(sprites.KNIGHT, {
-                start: 4,
-                end: 7
-            })
-        })
-        this.anims.create({
-            key: anims.COIN_SPIN,
-            frameRate: 10,
-            frames: this.anims.generateFrameNumbers(sprites.COIN, {
-                start: 0,
-                end: 3,
-            }),
-            repeat: -1
-        })
 
         //z-index
         floor.setDepth(0)
@@ -146,55 +131,9 @@ export class MainScene extends Phaser.Scene {
             this.cursors?.right.isDown || this.wasd.D.isDown
         ]
         this.channel?.emit('move', movement)
-
-        //movement
-        const [up, down, left, right] = movement
-        if (up || down || left || right) {
-            const playerSpeed = 80
-
-            //up and down
-            if (up && down) {
-                this.player?.setVelocityY(0)
-            } else if (up) {
-                this.player?.setVelocityY(-playerSpeed)
-            } else if (down) {
-                this.player?.setVelocityY(playerSpeed)
-            } else {
-                this.player?.setVelocityY(0)
-            }
-
-            //left and right
-            if (left && right) {
-                this.player?.setVelocityX(0)
-            } else if (left) {
-                this.player?.setVelocityX(-playerSpeed)
-                this.lastDirectionIsLeft = true
-            } else if (right) {
-                this.player?.setVelocityX(playerSpeed)
-                this.lastDirectionIsLeft = false
-            } else {
-                this.player?.setVelocityX(0)
-            }
-
-            //diagonals
-            const velocity = this.player?.body.velocity
-            if (velocity?.x != 0 && velocity?.y != 0) {
-                this.player?.setVelocityX(velocity!.x * Math.sqrt(0.5))
-                this.player?.setVelocityY(velocity!.y * Math.sqrt(0.5))
-            }
-
-            //animations
-            if (velocity?.x != 0 || velocity.y != 0) {
-                this.player?.setFlipX(this.lastDirectionIsLeft)
-                this.player?.anims.play(sprites.KNIGHT + '-' + anims.MOVE, true)
-            } else {
-                this.player?.anims.play(sprites.KNIGHT + '-' + anims.IDLE, true)
-            }
-        } else {
-            //idle
-            this.player?.setVelocity(0)
-            this.player?.anims.play(sprites.KNIGHT + '-' + anims.IDLE, true)
-        }
+        
+        //update movements
+        this.player!.update(movement)
 
         //client prediction
         this.clientPrediction()
@@ -246,7 +185,6 @@ export class MainScene extends Phaser.Scene {
             this.channel?.close()
         }, 30000)
         this.coin?.disableBody(true, true)
-        this.cameras.main.setAlpha(0.5)
         this.scene.launch(scenes.CLAIM_SCENE, { contract: addresses.DUNGEON, balance: this.balance })
         this.scene.sendToBack(this)
     }
@@ -257,5 +195,34 @@ export class MainScene extends Phaser.Scene {
         const balance = await manager.balanceOf(await this.signer!.getAddress())
         this.balance = balance
         console.log(balance)
+    }
+    
+    createAnims() {
+        //anims
+        this.anims.create({
+            key: sprites.KNIGHT + '-' + anims.IDLE,
+            frameRate: 10,
+            frames: this.anims.generateFrameNumbers(sprites.KNIGHT, {
+                start: 0,
+                end: 3
+            })
+        })
+        this.anims.create({
+            key: sprites.KNIGHT + '-' + anims.MOVE,
+            frameRate: 10,
+            frames: this.anims.generateFrameNumbers(sprites.KNIGHT, {
+                start: 4,
+                end: 7
+            })
+        })
+        this.anims.create({
+            key: anims.COIN_SPIN,
+            frameRate: 10,
+            frames: this.anims.generateFrameNumbers(sprites.COIN, {
+                start: 0,
+                end: 3,
+            }),
+            repeat: -1
+        })
     }
 }

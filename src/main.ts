@@ -1,6 +1,6 @@
 import './style.css'
 import Phaser from 'phaser'
-import { MainScene } from './scenes/mainScene'
+import { DungeonScene } from './scenes/dungeonScene'
 import { StartScene } from './scenes/landingScene'
 import { ConnectScene } from './scenes/connectScene'
 import ClaimScene from './scenes/claimScene'
@@ -17,5 +17,5 @@ new Phaser.Game({
     }
   },
   pixelArt: true,
-  scene: [StartScene, ConnectScene, MainScene, ClaimScene]
+  scene: [StartScene, ConnectScene, DungeonScene, ClaimScene]
 })

@@ -19,6 +19,7 @@ export class StartScene extends Phaser.Scene {
         this.load.bitmapFont(fonts.UPHEAVAL, '/fonts/upheaval.png', '/fonts/upheaval.xml')
         this.load.image(images.BTN_LIGHTBROWN, '/ui/btn-lightbrown.png')
         this.load.image(images.BTN_LIGHTBROWN_PRESSED, '/ui/btn-lightbrown-pressed.png')
+        this.load.image(images.BTN_GREY_PRESSED, '/ui/btn-grey-pressed.png')
         this.load.image(images.SPLASH_SCREEN, '/ui/splash-screen.png')
     }
 
@@ -92,11 +93,13 @@ export class StartScene extends Phaser.Scene {
                 console.error(e)
                 return
             }
-            this.button!.setText('wrong chain')
+            this.button!.setText('switch network')
+            this.button!.setEnable(false)
         }
     }
 
     reset() {
+        //reset scene
         this.signer = undefined
         this.registry.remove(globals.SIGNER)
         this.scene.restart()

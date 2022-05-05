@@ -2,13 +2,12 @@ import { ethers } from 'ethers'
 import Phaser from 'phaser'
 import { ClaimVerifier } from '../lib/eth/types'
 import { getContract } from '../lib/eth/contracts'
-import { images, scenes, globals, fonts } from '../lib/utils/keys'
+import { images, scenes, globals } from '../lib/utils/keys'
 import { addresses, contracts } from '../../commons/contracts.mjs'
+import { Button } from '../lib/plugins/ui/Button'
 
 export default class ClaimScene extends Phaser.Scene {
-    button?: Phaser.GameObjects.RenderTexture
-    text?: Phaser.GameObjects.BitmapText
-    container?: Phaser.GameObjects.Container
+    button?: Button
     signer?: ethers.providers.JsonRpcSigner
     sig?: string = undefined
     contract?: string
@@ -25,11 +24,13 @@ export default class ClaimScene extends Phaser.Scene {
     }
 
     preload() {
-        this.load.bitmapFont(fonts.UPHEAVAL, '/fonts/upheaval.png', '/fonts/upheaval.xml')
         this.signer = this.registry.get(globals.SIGNER)
     }
 
     create() {
+        //set bg
+        this.cameras.main.setBackgroundColor('rgba(20, 20, 20, 0.5)')
+
         //get screen height and width
         const { width, height } = this.scale
 
@@ -41,50 +42,49 @@ export default class ClaimScene extends Phaser.Scene {
         }
 
         //add components
-        this.button = this.add.nineslice(0, 0, 135, 18, images.BTN_GREY, [3, 3, 5, 3]).setOrigin(0.5, 0.5).setScale(3, 3).setInteractive()
-        this.text = this.add.bitmapText(0, 0, fonts.UPHEAVAL, text, 32).setOrigin(0.5, 0.5)
-        this.container = this.add.container(width * 0.5, height * 0.4, [this.button, this.text])
-
-        //add event listeners
-        this.scale.on('resize', () => this.resize())
-        this.button.on('pointerover', () => {
-            this.button?.setTint(0x44fff9)
+        this.button = new Button({
+            scene: this,
+            x: width * 0.5,
+            y: height * 0.5,
+            key: images.BTN_LIGHTBROWN,
+            width: 300,
+            height: 54,
+            text
         })
-        this.button.on('pointerout', () => {
-            this.button?.clearTint()
-        })
-        this.button.on('pointerdown', () => {
-            this.button?.setTint(0x2aa19d)
-        })
-        this.button.on('pointerup', async () => {
-            this.button?.clearTint()
+        this.button.onClick(() => {
             if (this.claimed) return
             this.claim()
         })
+
+        //resize listener
+        this.scale.on('resize', () => this.resize())
     }
 
     update() {
-        if (this.claimed) return
+        //check if server already sent signature
+        if (this.sig) return
         const sig = this.data.get('sig')
         if (!sig) return
         this.sig = sig
-        this.text?.setText('claim nft')
+        this.button!.setText('claim nft')
     }
 
     resize() {
         //recenter on resize
         const { width, height } = this.scale
-        this.container?.setPosition(width * 0.5, height * 0.5)
+        this.button!.setPosition(width * 0.5, height * 0.5)
     }
 
     async claim() {
         if (!this.sig) return
+        
         const claimVerifier = getContract(contracts.CLAIM_VERIFIER, this.signer!) as ClaimVerifier
         const address = await this.signer!.getAddress()
-        const request = addresses[contracts.DUNGEON]
+        const request = addresses[this.contract]
         const deadline = ethers.constants.MaxUint256
         const receiver = address
         const { v, r, s } = ethers.utils.splitSignature(this.sig)
+        
         try {
             const tx = await claimVerifier.claim(
                 request,
@@ -99,7 +99,7 @@ export default class ClaimScene extends Phaser.Scene {
             )
             await tx.wait()
             this.claimed = true
-            this.text?.setText('claimed!')
+            this.button!.setText('claimed!')
         } catch (error: any) {
             console.error(error)
         }

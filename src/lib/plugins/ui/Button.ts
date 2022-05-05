@@ -1,6 +1,6 @@
 import Phaser from 'phaser'
 import NinePatch2 from 'phaser3-rex-plugins/plugins/ninepatch2.js'
-import { fonts } from '../../utils/keys'
+import { fonts, images } from '../../utils/keys'
 
 export class Button extends Phaser.GameObjects.Container {
     text: Phaser.GameObjects.BitmapText
@@ -9,7 +9,7 @@ export class Button extends Phaser.GameObjects.Container {
 
     constructor(
         { scene, text, x, y, width, height, key }:
-        { scene: Phaser.Scene, text: string, x: number, y: number, width: number, height: number, key: string }
+            { scene: Phaser.Scene, text: string, x: number, y: number, width: number, height: number, key: string }
     ) {
         super(scene, x, y)
 
@@ -74,5 +74,21 @@ export class Button extends Phaser.GameObjects.Container {
 
     setText(text: string) {
         this.text.setText(text)
+    }
+
+    setEnable(set: boolean) {
+        if (set) {
+            this.ninePatch.setInteractive()
+            return
+        }
+
+        this.ninePatch.removeInteractive()
+        this.text.setAlpha(0.5)
+        this.ninePatch.setTexture(
+            images.BTN_GREY_PRESSED,
+            undefined,
+            [3, undefined, 3],
+            [3, undefined, 3]
+        )
     }
 }

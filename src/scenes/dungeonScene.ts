@@ -7,20 +7,22 @@ import { ethers } from "ethers";
 import { ClaimManagerERC721 } from "../lib/eth/types";
 import { addresses, contracts } from "../../commons/contracts.mjs"
 import Player from "../lib/plugins/entities/characters/Player";
+import Reticle from "../lib/plugins/ui/Reticle";
 
 export class DungeonScene extends Phaser.Scene {
-    player?: Player
-    coin?: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody
-    cursors?: Phaser.Types.Input.Keyboard.CursorKeys
-    wasd?: any
+    player!: Player
+    coin!: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody
+    cursors!: Phaser.Types.Input.Keyboard.CursorKeys
+    wasd!: any
     lastDirectionIsLeft = false
-    channel?: ClientChannel
-    SI?: SnapshotInterpolation
-    playerVault?: Vault
-    initialPos?: Array<number>
+    channel!: ClientChannel
+    SI!: SnapshotInterpolation
+    playerVault!: Vault
+    initialPos!: Array<number>
     tick = 0
-    balance?: ethers.BigNumber
-    signer?: ethers.providers.JsonRpcSigner
+    balance!: ethers.BigNumber
+    signer!: ethers.providers.JsonRpcSigner
+    reticle!: Reticle
 
     constructor() {
         super(scenes.DUNGEON_SCENE)
@@ -37,6 +39,7 @@ export class DungeonScene extends Phaser.Scene {
         this.load.image(tiles.DUNGEON_SET, '/tiles/dungeon.png')
         this.load.tilemapTiledJSON(tiles.DUNGEON_MAP, '/tiles/dungeon.json')
         this.load.spritesheet(sprites.COIN, '/spritesheets/coin.png', { frameWidth: 6, frameHeight: 7 })
+        this.load.image(sprites.RETICLE, '/spritesheets/reticle.png')
         
         //inputs
         this.cursors = this.input.keyboard.createCursorKeys()
@@ -70,7 +73,6 @@ export class DungeonScene extends Phaser.Scene {
         this.coin = this.physics.add.sprite(240, 70, sprites.COIN)
 
         //player sprite
-        // this.player = this.physics.add.sprite(this.initialPos![0], this.initialPos![1], sprites.KNIGHT)
         this.player = new Player({
             scene: this,
             x: this.initialPos![0],
@@ -83,7 +85,18 @@ export class DungeonScene extends Phaser.Scene {
         //camera
         const camera = this.cameras.main
         camera.zoom = 3
-        camera.startFollow(this.player)
+        camera.centerOn(this.player.x, this.player.y)
+
+        //reticle
+        this.reticle = new Reticle({
+            scene: this,
+            x: this.player.x,
+            y: this.player.y,
+            key: sprites.RETICLE,
+            player: this.player,
+            camera: this.cameras.main,
+            maxRadius: 150
+        })
 
         //z-index
         floor.setDepth(0)
@@ -102,38 +115,41 @@ export class DungeonScene extends Phaser.Scene {
         this.coin.anims.play(anims.COIN_SPIN, true)
 
         //server update handler
-        this.channel?.on('update', (data: any) => {
-            this.SI?.snapshot.add(data)
+        this.channel.on('update', (data: any) => {
+            this.SI.snapshot.add(data)
         })
 
         //claim handler
-        this.channel?.on('claim', sig => {
+        this.channel.on('claim', sig => {
             this.scene.get(scenes.CLAIM_SCENE).data.set('sig', sig)
             console.log("packet signature: ", sig)
         })
 
         // pause physics when disconnected
-        this.channel?.onDisconnect(() => {
+        this.channel.onDisconnect(() => {
             this.physics.pause()
         })
 
+        //get nft balance
         this.getBalance()
+
+        //add event listeners
     }
 
     update() {
-        this.tick++
-
         //emit input to server
         const movement = [
-            this.cursors?.up.isDown || this.wasd.W.isDown,
-            this.cursors?.down.isDown || this.wasd.S.isDown,
-            this.cursors?.left.isDown || this.wasd.A.isDown,
-            this.cursors?.right.isDown || this.wasd.D.isDown
+            this.cursors.up.isDown || this.wasd.W.isDown,
+            this.cursors.down.isDown || this.wasd.S.isDown,
+            this.cursors.left.isDown || this.wasd.A.isDown,
+            this.cursors.right.isDown || this.wasd.D.isDown
         ]
-        this.channel?.emit('move', movement)
+        this.channel.emit('move', movement)
         
         //update movements
         this.player!.update(movement)
+
+        this.reticle!.update()
 
         //client prediction
         this.clientPrediction()
@@ -144,7 +160,7 @@ export class DungeonScene extends Phaser.Scene {
 
     clientPrediction() {
         //add player vault snapshot
-        this.playerVault?.add(
+        this.playerVault.add(
             this.SI!.snapshot.create(
                 [{
                     id: this.channel!.id!,
@@ -161,7 +177,7 @@ export class DungeonScene extends Phaser.Scene {
         if (this.player) {
             const serverSnapshot = this.SI!.vault.get()
             if (!serverSnapshot) return
-            const playerSnapshot = this.playerVault?.get(serverSnapshot.time, true)
+            const playerSnapshot = this.playerVault.get(serverSnapshot.time, true)
 
             if (serverSnapshot && playerSnapshot) {
                 const serverPos = (serverSnapshot.state as any)[0]
@@ -182,9 +198,9 @@ export class DungeonScene extends Phaser.Scene {
 
     collectCoin() {
         setTimeout(() => {
-            this.channel?.close()
+            this.channel.close()
         }, 30000)
-        this.coin?.disableBody(true, true)
+        this.coin.disableBody(true, true)
         this.scene.launch(scenes.CLAIM_SCENE, { contract: addresses.DUNGEON, balance: this.balance })
         this.scene.sendToBack(this)
     }

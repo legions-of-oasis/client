@@ -2,6 +2,7 @@
 export const sprites = {
     KNIGHT: 'knight',
     COIN: 'coin',
+    RETICLE: 'reticle'
 }
 
 //tilemaps & tilesets
@@ -34,7 +35,7 @@ export const images = {
     BTN_WHITE: 'btnwhite',
     BTN_WHITE_PRESSED: 'btnwhitepressed',
     BTN_LIGHTBROWN: 'btnlightbrown',
-    BTN_LIGHTBROWN_PRESSED: 'btnlightbrownpressed',
+    BTN_LIGHTBROWN_PRESSED: 'btnlightbrownpressed'
 }
 
 //fonts

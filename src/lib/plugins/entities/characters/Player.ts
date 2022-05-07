@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { sprites, anims } from "../../../utils/keys";
+import { anims } from "../../../utils/keys";
 
 export interface IPlayerParams {
     scene: Phaser.Scene,
@@ -10,10 +10,9 @@ export interface IPlayerParams {
     id: string
 }
 
-export default class Player extends Phaser.GameObjects.Sprite {
+export default class Player extends Phaser.Physics.Arcade.Sprite {
     playerSpeed: number
     lastDirectionIsLeft = true
-    declare body: Phaser.Physics.Arcade.Body
 
     constructor(params: IPlayerParams) {
         super(params.scene, params.x, params.y, params.key)
@@ -29,46 +28,46 @@ export default class Player extends Phaser.GameObjects.Sprite {
         if (up || down || left || right) {
             //up and down
             if (up && down) {
-                this.body.setVelocityY(0)
+                this.setVelocityY(0)
             } else if (up) {
-                this.body.setVelocityY(-this.playerSpeed)
+                this.setVelocityY(-this.playerSpeed)
             } else if (down) {
-                this.body.setVelocityY(this.playerSpeed)
+                this.setVelocityY(this.playerSpeed)
             } else {
-                this.body.setVelocityY(0)
+                this.setVelocityY(0)
             }
 
             //left and right
             if (left && right) {
-                this.body.setVelocityX(0)
+                this.setVelocityX(0)
             } else if (left) {
-                this.body.setVelocityX(-this.playerSpeed)
+                this.setVelocityX(-this.playerSpeed)
                 this.lastDirectionIsLeft = true
             } else if (right) {
-                this.body.setVelocityX(this.playerSpeed)
+                this.setVelocityX(this.playerSpeed)
                 this.lastDirectionIsLeft = false
             } else {
-                this.body.setVelocityX(0)
+                this.setVelocityX(0)
             }
 
             //diagonals
             const velocity = this.body.velocity
             if (velocity?.x != 0 && velocity?.y != 0) {
-                this.body.setVelocityX(velocity!.x * Math.sqrt(0.5))
-                this.body.setVelocityY(velocity!.y * Math.sqrt(0.5))
+                this.setVelocityX(velocity!.x * Math.sqrt(0.5))
+                this.setVelocityY(velocity!.y * Math.sqrt(0.5))
             }
 
             //animations
             if (velocity?.x != 0 || velocity.y != 0) {
                 this.setFlipX(this.lastDirectionIsLeft)
-                this.anims.play(sprites.KNIGHT + '-' + anims.MOVE, true)
+                this.anims.play(this.texture.key + '-' + anims.MOVE, true)
             } else {
-                this.anims.play(sprites.KNIGHT + '-' + anims.IDLE, true)
+                this.anims.play(this.texture.key + '-' + anims.IDLE, true)
             }
         } else {
             //idle
-            this.body.setVelocity(0)
-            this.anims.play(sprites.KNIGHT + '-' + anims.IDLE, true)
+            this.setVelocity(0)
+            this.anims.play(this.texture.key + '-' + anims.IDLE, true)
         }
     }
 }

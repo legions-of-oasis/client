@@ -39,7 +39,6 @@ export class DungeonScene extends Phaser.Scene {
     preload() {
         //assets
         this.load.spritesheet(sprites.KNIGHT, '/spritesheets/knight.png', { frameWidth: 15, frameHeight: 22 })
-        this.load.spritesheet(sprites.COIN, '/spritesheets/coin.png', { frameWidth: 6, frameHeight: 7 })
         this.load.spritesheet(sprites.SWORD, '/spritesheets/sword.png', { frameWidth: 16, frameHeight: 22 })
         this.load.spritesheet(sprites.CHORT, '/spritesheets/chort.png', { frameWidth: 16, frameHeight: 24 })
         this.load.tilemapTiledJSON(tiles.DUNGEON_MAP, '/tiles/dungeon.json')
@@ -79,9 +78,6 @@ export class DungeonScene extends Phaser.Scene {
         //init enemies
         this.enemies = []
 
-        //star sprite
-        this.coin = this.physics.add.sprite(240, 70, sprites.COIN)
-
         //player sprite
         this.player = new Player({
             scene: this,
@@ -91,10 +87,7 @@ export class DungeonScene extends Phaser.Scene {
             speed: 80,
             id: this.channel!.id!.toString(),
             hp: 100
-        }).setSize(10, 16)
-
-        //player hit handler
-        this.player.on('hit', (damage: number) => this.handleHit(damage))
+        })
 
         //add chort
         const chort = new Chort({
@@ -106,11 +99,17 @@ export class DungeonScene extends Phaser.Scene {
             id: 'chort',
             hp: 50
         }, this.player)
-        chort.setSize(10, 16)
         this.enemies.push(chort)
 
         //start game ui
-        this.scene.run(scenes.GAMEUI_SCENE, {hp: this.player.maxHp, masterScene: this.scene.key})
+        this.scene.run(scenes.GAMEUI_SCENE, {maxHp: this.player.maxHp, player: this.player})
+
+        //add mouseclick event listener
+        this.input.on('pointerdown', () => {
+            if (!this.input.mousePointer.locked || !this.player.equippedWeapon) return
+
+            this.player.equippedWeapon.attack(this.enemies)
+        })
 
         //camera
         const camera = this.cameras.main
@@ -152,12 +151,6 @@ export class DungeonScene extends Phaser.Scene {
         this.physics.add.collider(this.player, walls)
         this.physics.add.collider(this.enemies, walls)
 
-        //overlap
-        this.physics.add.overlap(this.player, this.coin, () => this.collectCoin())
-
-        //start anims
-        this.coin.anims.play(anims.COIN_SPIN, true)
-
         //server update handler
         this.channel.on('update', (data: any) => {
             this.SI.snapshot.add(data)
@@ -198,10 +191,10 @@ export class DungeonScene extends Phaser.Scene {
         this.enemies.forEach(o => o.update())
 
         //client prediction
-        this.clientPrediction()
+        // this.clientPrediction()
 
         //server reconciliation
-        this.serverReconciliation(movement)
+        // this.serverReconciliation(movement)
     }
 
     clientPrediction() {
@@ -242,18 +235,14 @@ export class DungeonScene extends Phaser.Scene {
         }
     }
 
-    collectCoin() {
-        setTimeout(() => {
-            this.channel.close()
-        }, 30000)
-        this.coin.disableBody(true, true)
-        this.scene.launch(scenes.CLAIM_SCENE, { contract: addresses.DUNGEON, balance: this.balance })
-        this.scene.sendToBack(this)
-    }
-
-    handleHit(damage: number) {
-        this.events.emit('hit', damage)
-    }
+    // collectCoin() {
+    //     setTimeout(() => {
+    //         this.channel.close()
+    //     }, 30000)
+    //     this.coin.disableBody(true, true)
+    //     this.scene.launch(scenes.CLAIM_SCENE, { contract: addresses.DUNGEON, balance: this.balance })
+    //     this.scene.sendToBack(this)
+    // }
 
     async getBalance() {
         //get nft balance

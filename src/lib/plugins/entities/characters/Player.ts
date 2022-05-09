@@ -10,42 +10,46 @@ export default class Player extends BaseEntity implements Hittable {
     equippedWeapon?: Weapon
     lastHit = 0
     hitCooldown = 500
+    knockbackCooldown = 200
     
     constructor(params: IPlayerParams) {
         super(params)
 
         this.equippedWeapon = params.equippedWeapon
-        
-
-        //add event listeners
-        this.scene.input.on('pointerdown', () => {
-            if (!this.scene.input.mousePointer.locked || !this.equippedWeapon) return
-
-            this.equippedWeapon.attack()
-        })
+        this.setSize(10, 16)
+        this.setDrag(10)
     }
 
     update(movement: boolean[]): void {
-        super.update(movement)
+        const time = this.scene.time.now
+        if (time > this.lastHit + this.knockbackCooldown) {
+            super.update(movement)
+        }
 
         //update equipped weapon
         if (this.equippedWeapon) this.equippedWeapon.update()
-        const time = this.scene.time.now
-        if (time > this.lastHit + 300) this.clearTint()
+        if (time > this.lastHit + this.hitCooldown) this.clearTint()
     }
 
     setEquippedWeapon(weapon: Weapon) {
         this.equippedWeapon = weapon
     }
 
-    hit(damage: number) {
+    hit(damage: number, knockback: number, hitter: Phaser.GameObjects.Sprite) {
         const time = this.scene.time.now
         if (time < this.lastHit + this.hitCooldown) return false
 
         this.setTint(0xff0000)
+
         this.lastHit = time
-        this.currentHp -= damage
-        this.emit('hit', damage)
+
+        const angle = Phaser.Math.Angle.Between(this.x, this.y, hitter.x, hitter.y)
+        const oppoVelocity = this.scene.physics.velocityFromAngle(Phaser.Math.RadToDeg(angle) + 180, this.movementSpeed * knockback)
+        this.setVelocity(oppoVelocity.x, oppoVelocity.y)
+
+        const newHealth = this.getData('hp') - damage
+        this.setData('hp', newHealth)
+
         return true
     }
 }

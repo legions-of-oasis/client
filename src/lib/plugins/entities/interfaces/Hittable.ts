@@ -1,5 +1,7 @@
 
 
 export interface Hittable extends Phaser.Physics.Arcade.Sprite {
-    hit: (damage: number) => boolean
+    hit: (damage: number, knockback: number, hitter: Phaser.GameObjects.Sprite) => boolean
+    lastHit: number
+    hitCooldown: number
 }

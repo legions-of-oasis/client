@@ -1,27 +1,28 @@
 import Phaser from "phaser";
 import { images, scenes } from "../lib/utils/keys";
 import NinePatch from "phaser3-rex-plugins/plugins/ninepatch2";
+import Player from "../lib/plugins/entities/characters/Player";
 
 export default class GameUIScene extends Phaser.Scene {
-    hp!: number
+    maxHp!: number
     healthBar!: NinePatch
-    masterScene!: string
+    player!: Player
     currentHp!: number
 
     constructor() {
         super(scenes.GAMEUI_SCENE)
     }
 
-    init({ hp, masterScene }: {hp: number, masterScene: string}) {
-        this.hp = hp
-        this.masterScene = masterScene
+    init({ maxHp, player }: {maxHp: number, player: Player}) {
+        this.maxHp = maxHp
+        this.player = player
     }
 
     create() {
         const container = new NinePatch(this, {
             x: 50,
             y: 50,
-            width: this.hp + 3,
+            width: this.maxHp + 3,
             height: 7,
             key: images.HEALTH_CONTAINER,
             columns: [1, undefined, 4],
@@ -33,7 +34,7 @@ export default class GameUIScene extends Phaser.Scene {
         this.healthBar = new NinePatch(this, {
             x: 53,
             y: 56,
-            width: this.hp,
+            width: this.maxHp,
             height: 3,
             key: images.HEALTH_BAR,
             columns: [0, undefined, 2],
@@ -41,13 +42,16 @@ export default class GameUIScene extends Phaser.Scene {
         })
         this.healthBar.setScale(3).setOrigin(0,0)
         this.add.existing(this.healthBar)
-        this.scene.bringToTop()
         
-        this.scene.get(this.masterScene).events.on('hit', (damage: number) => this.handleHit(damage))
+        this.scene.bringToTop()
+
+        this.player.data.events.on('changedata-hp', (_object, _key, value) => {
+            this.updateHp(value)
+        })
     }
 
-    handleHit(damage: number) {
-        this.hp -= damage
-        this.healthBar.resize(this.hp, 3)
+    updateHp(hp: number) {
+        this.currentHp = hp
+        this.healthBar.resize(this.currentHp, 3)
     }
 }

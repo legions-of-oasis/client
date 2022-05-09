@@ -17,7 +17,6 @@ export default abstract class BaseEntity extends Phaser.Physics.Arcade.Sprite {
     movementSpeed: number
     lastDirectionIsLeft = true
     maxHp: number
-    currentHp: number
 
     constructor(params: IBaseEntityParams) {
         super(params.scene, params.x, params.y, params.key)
@@ -26,7 +25,8 @@ export default abstract class BaseEntity extends Phaser.Physics.Arcade.Sprite {
         params.scene.physics.world.enable(this, 0)
         
         this.movementSpeed = params.speed
-        this.maxHp = this.currentHp = params.hp
+        this.maxHp = params.hp
+        this.setData('hp', params.hp)
         this.anims.play(this.texture.key + '-' + anims.IDLE, true)
     }
 

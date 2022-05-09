@@ -12,6 +12,7 @@ interface ISwordParams {
 export default class Sword extends Phaser.Physics.Arcade.Sprite implements Weapon {
     player: Phaser.Physics.Arcade.Sprite
     reticle: Phaser.Physics.Arcade.Sprite
+    damage = 20
     
     constructor(params: ISwordParams) {
         super(params.scene, params.player.x, params.player.y, params.key)
@@ -23,6 +24,8 @@ export default class Sword extends Phaser.Physics.Arcade.Sprite implements Weapo
         //add to scene
         this.scene.add.existing(this)
         this.scene.physics.world.enable(this)
+
+        this.setSize(20, 20)
     }
 
     update() {
@@ -37,7 +40,10 @@ export default class Sword extends Phaser.Physics.Arcade.Sprite implements Weapo
         this.setAngle(isLeftHalf ? angle + 135 : angle + 45)
     }
 
-    attack() {
+    attack(enemies: Phaser.Physics.Arcade.Sprite[]) {
         this.anims.play(sprites.SWORD + '-' + anims.ATTACK, true)
+        this.scene.physics.overlap(enemies, this, (enemy: any) => {
+            enemy.hit(this.damage, 2, this.player)
+        })
     }
 }

@@ -5,7 +5,7 @@ import { SnapshotInterpolation, Vault } from "@geckos.io/snapshot-interpolation"
 import { getContract } from "../lib/eth/contracts";
 import { ethers } from "ethers";
 import { ClaimManagerERC721 } from "../lib/eth/types";
-import { addresses, contracts } from "../../commons/contracts.mjs"
+import { contracts } from "../../commons/contracts.mjs"
 import Player from "../lib/plugins/entities/characters/Player";
 import Reticle from "../lib/plugins/ui/Reticle";
 import Sword from "../lib/plugins/entities/weapons/Sword";

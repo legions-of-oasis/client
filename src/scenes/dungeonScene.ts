@@ -75,9 +75,6 @@ export class DungeonScene extends Phaser.Scene {
         const walls = map.createLayer('walls', tileset, 0, 0)
         const overhead = map.createLayer('overhead', tileset, 0, 0)
 
-        //init enemies
-        this.enemies = []
-
         //player sprite
         this.player = new Player({
             scene: this,
@@ -89,27 +86,22 @@ export class DungeonScene extends Phaser.Scene {
             hp: 100
         })
 
+        //init enemies
+        this.enemies = []
+
         //add chort
-        const chort = new Chort({
-            scene: this,
-            x: 240,
-            y: 100,
-            key: sprites.CHORT,
-            speed: 20,
-            id: 'chort',
-            hp: 50
-        }, this.player)
-        this.enemies.push(chort)
-
-        //start game ui
-        this.scene.run(scenes.GAMEUI_SCENE, {maxHp: this.player.maxHp, player: this.player})
-
-        //add mouseclick event listener
-        this.input.on('pointerdown', () => {
-            if (!this.input.mousePointer.locked || !this.player.equippedWeapon) return
-
-            this.player.equippedWeapon.attack(this.enemies)
-        })
+        for (let i=0; i < 5; i ++) {
+            const chort = new Chort({
+                scene: this,
+                x: 240 + i * 16,
+                y: 100,
+                key: sprites.CHORT,
+                speed: 20,
+                id: 'chort',
+                hp: 50
+            }, this.player)
+            this.enemies.push(chort)
+        }
 
         //camera
         const camera = this.cameras.main
@@ -137,12 +129,22 @@ export class DungeonScene extends Phaser.Scene {
             })
         )
 
+        //start game ui
+        this.scene.run(scenes.GAMEUI_SCENE, {maxHp: this.player.maxHp, player: this.player})
+
+        //add mouseclick event listener
+        this.input.on('pointerdown', () => {
+            if (!this.input.mousePointer.locked || !this.player.equippedWeapon) return
+
+            this.player.equippedWeapon.attack(this.enemies)
+        })
+
         //z-index
         floor.setDepth(0)
         walls.setDepth(10)
         this.player.setDepth(20)
-        this.player.equippedWeapon?.setDepth(21)
-        this.enemies.forEach(e => e.setDepth(22))
+        this.enemies.forEach(e => e.setDepth(21))
+        this.player.equippedWeapon?.setDepth(22)
         overhead.setDepth(30)
         this.reticle.setDepth(100)
 
@@ -150,6 +152,7 @@ export class DungeonScene extends Phaser.Scene {
         walls.setCollisionByProperty({ collides: true })
         this.physics.add.collider(this.player, walls)
         this.physics.add.collider(this.enemies, walls)
+        this.physics.add.collider(this.enemies, this.enemies)
 
         //server update handler
         this.channel.on('update', (data: any) => {
@@ -168,7 +171,7 @@ export class DungeonScene extends Phaser.Scene {
         })
 
         //get nft balance
-        this.getBalance()
+        // this.getBalance()
     }
 
     update() {
@@ -187,7 +190,7 @@ export class DungeonScene extends Phaser.Scene {
         //update reticle
         this.reticle!.update()
 
-        //update updatables
+        //update enemies
         this.enemies.forEach(o => o.update())
 
         //client prediction

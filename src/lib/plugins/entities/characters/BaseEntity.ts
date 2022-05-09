@@ -17,6 +17,7 @@ export default abstract class BaseEntity extends Phaser.Physics.Arcade.Sprite {
     movementSpeed: number
     lastDirectionIsLeft = true
     maxHp: number
+    alive = true
 
     constructor(params: IBaseEntityParams) {
         super(params.scene, params.x, params.y, params.key)

@@ -9,8 +9,9 @@ interface IPlayerParams extends IBaseEntityParams {
 export default class Player extends BaseEntity implements Hittable {
     equippedWeapon?: Weapon
     lastHit = 0
-    hitCooldown = 500
+    hitCooldown = 1000
     knockbackCooldown = 200
+    bubble = true
     
     constructor(params: IPlayerParams) {
         super(params)
@@ -21,14 +22,21 @@ export default class Player extends BaseEntity implements Hittable {
     }
 
     update(movement: boolean[]): void {
-        const time = this.scene.time.now
-        if (time > this.lastHit + this.knockbackCooldown) {
-            super.update(movement)
-        }
-
         //update equipped weapon
         if (this.equippedWeapon) this.equippedWeapon.update()
-        if (time > this.lastHit + this.hitCooldown) this.clearTint()
+
+        //update hit display
+        const time = this.scene.time.now
+        const inTintPeriod = time < this.lastHit + 50
+        const isKnockbacked = time < this.lastHit + this.knockbackCooldown
+
+        if (!isKnockbacked) super.update(movement)
+        if (!inTintPeriod && this.isTinted) this.clearTint()
+        if (this.isOnHitCooldown() && !inTintPeriod) {
+            this.setAlpha(time % 200 < 100 ? 0.1 : 1)
+        } else {
+            this.setAlpha(1)
+        }
     }
 
     setEquippedWeapon(weapon: Weapon) {
@@ -37,9 +45,9 @@ export default class Player extends BaseEntity implements Hittable {
 
     hit(damage: number, knockback: number, hitter: Phaser.GameObjects.Sprite) {
         const time = this.scene.time.now
-        if (time < this.lastHit + this.hitCooldown) return false
+        if (this.isOnHitCooldown()) return false
 
-        this.setTint(0xff0000)
+        this.setTintFill(0xDDDDDD)
 
         this.lastHit = time
 
@@ -48,8 +56,13 @@ export default class Player extends BaseEntity implements Hittable {
         this.setVelocity(oppoVelocity.x, oppoVelocity.y)
 
         const newHealth = this.getData('hp') - damage
+
         this.setData('hp', newHealth)
 
         return true
+    }
+
+    isOnHitCooldown() {
+        return this.scene.time.now < this.lastHit + this.hitCooldown
     }
 }

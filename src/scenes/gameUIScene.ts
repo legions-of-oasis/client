@@ -45,13 +45,13 @@ export default class GameUIScene extends Phaser.Scene {
         
         this.scene.bringToTop()
 
-        this.player.data.events.on('changedata-hp', (_object, _key, value) => {
-            this.updateHp(value)
+        this.player.data.events.on('changedata-hp', () => {
+            this.updateHp()
         })
     }
 
-    updateHp(hp: number) {
-        this.currentHp = hp
+    updateHp() {
+        this.currentHp = this.player.getData('hp')
         this.healthBar.resize(this.currentHp, 3)
     }
 }

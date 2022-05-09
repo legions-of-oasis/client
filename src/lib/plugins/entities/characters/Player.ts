@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import { anims } from "../../../utils/keys";
+import { Weapon } from "../weapons/Sword";
 
 export interface IPlayerParams {
     scene: Phaser.Scene,
@@ -7,12 +8,14 @@ export interface IPlayerParams {
     y: number,
     key: string,
     speed: number,
-    id: string
+    id: string,
+    equippedWeapon?: Weapon
 }
 
 export default class Player extends Phaser.Physics.Arcade.Sprite {
     playerSpeed: number
     lastDirectionIsLeft = true
+    equippedWeapon?: Weapon
 
     constructor(params: IPlayerParams) {
         super(params.scene, params.x, params.y, params.key)
@@ -21,9 +24,13 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
         params.scene.physics.world.enable(this, 0)
         
         this.playerSpeed = params.speed
+        this.equippedWeapon = params.equippedWeapon
+        this.anims.play(this.texture.key + '-' + anims.IDLE, true)
     }
 
-    update(movement: boolean[]) {//movement
+    update(movement: boolean[]) {
+        //movement
+        const velocity = this.body.velocity
         const [up, down, left, right] = movement
         if (up || down || left || right) {
             //up and down
@@ -51,23 +58,28 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
             }
 
             //diagonals
-            const velocity = this.body.velocity
             if (velocity?.x != 0 && velocity?.y != 0) {
                 this.setVelocityX(velocity!.x * Math.sqrt(0.5))
                 this.setVelocityY(velocity!.y * Math.sqrt(0.5))
             }
-
-            //animations
-            if (velocity?.x != 0 || velocity.y != 0) {
-                this.setFlipX(this.lastDirectionIsLeft)
-                this.anims.play(this.texture.key + '-' + anims.MOVE, true)
-            } else {
-                this.anims.play(this.texture.key + '-' + anims.IDLE, true)
-            }
         } else {
             //idle
             this.setVelocity(0)
+        }
+
+        //animations
+        if (velocity?.x != 0 || velocity.y != 0) {
+            this.setFlipX(this.lastDirectionIsLeft)
+            this.anims.play(this.texture.key + '-' + anims.MOVE, true)
+        } else {
             this.anims.play(this.texture.key + '-' + anims.IDLE, true)
         }
+
+        //update equipped weapon
+        if (this.equippedWeapon) this.equippedWeapon.update()
+    }
+
+    setEquippedWeapon(weapon: Weapon) {
+        this.equippedWeapon = weapon
     }
 }

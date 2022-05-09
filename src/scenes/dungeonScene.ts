@@ -8,6 +8,7 @@ import { ClaimManagerERC721 } from "../lib/eth/types";
 import { addresses, contracts } from "../../commons/contracts.mjs"
 import Player from "../lib/plugins/entities/characters/Player";
 import Reticle from "../lib/plugins/ui/Reticle";
+import Sword from "../lib/plugins/entities/weapons/Sword";
 
 export class DungeonScene extends Phaser.Scene {
     player!: Player
@@ -40,6 +41,7 @@ export class DungeonScene extends Phaser.Scene {
         this.load.tilemapTiledJSON(tiles.DUNGEON_MAP, '/tiles/dungeon.json')
         this.load.spritesheet(sprites.COIN, '/spritesheets/coin.png', { frameWidth: 6, frameHeight: 7 })
         this.load.image(sprites.RETICLE, '/spritesheets/reticle.png')
+        this.load.spritesheet(sprites.SWORD, '/spritesheets/sword.png', { frameWidth: 16, frameHeight: 22 })
         
         //inputs
         this.cursors = this.input.keyboard.createCursorKeys()
@@ -98,11 +100,23 @@ export class DungeonScene extends Phaser.Scene {
             maxRadius: 150
         })
 
+        //set equipped weapon
+        this.player.setEquippedWeapon(
+            new Sword({
+                scene: this,
+                key: sprites.SWORD,
+                player: this.player,
+                reticle: this.reticle
+            })
+        )
+
         //z-index
         floor.setDepth(0)
         walls.setDepth(10)
         this.player.setDepth(20)
+        this.player.equippedWeapon?.setDepth(21)
         overhead.setDepth(30)
+        this.reticle.setDepth(100)
 
         //collision
         walls.setCollisionByProperty({ collides: true })
@@ -134,6 +148,11 @@ export class DungeonScene extends Phaser.Scene {
         this.getBalance()
 
         //add event listeners
+        this.input.on('pointerdown', () => {
+            if (!this.input.mousePointer.locked) return
+
+            this.player.equippedWeapon!.attack()
+        })
     }
 
     update() {
@@ -149,6 +168,7 @@ export class DungeonScene extends Phaser.Scene {
         //update movements
         this.player!.update(movement)
 
+        //update reticle
         this.reticle!.update()
 
         //client prediction
@@ -239,6 +259,14 @@ export class DungeonScene extends Phaser.Scene {
                 end: 3,
             }),
             repeat: -1
+        })
+        this.anims.create({
+            key: sprites.SWORD + '-' + anims.ATTACK,
+            frameRate: 15,
+            frames: this.anims.generateFrameNumbers(sprites.SWORD, {
+                start: 0,
+                end: 4,
+            })
         })
     }
 }

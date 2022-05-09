@@ -11,7 +11,6 @@ interface IReticleParams {
 }
 
 export default class Reticle extends Phaser.Physics.Arcade.Sprite {
-    scene: Phaser.Scene
     pointer: Phaser.Input.Pointer
     player: Phaser.GameObjects.Sprite
     camera: Phaser.Cameras.Scene2D.Camera
@@ -23,7 +22,6 @@ export default class Reticle extends Phaser.Physics.Arcade.Sprite {
         super(params.scene, params.x, params.y, params.key)
 
         //init properties
-        this.scene = params.scene
         this.pointer = params.scene.input.mousePointer
         this.player = params.player
         this.camera = params.camera
@@ -34,9 +32,6 @@ export default class Reticle extends Phaser.Physics.Arcade.Sprite {
 
         //set scale
         this.setScale(0.4)
-
-        //set z-index
-        this.setDepth(100)
 
         //add to scene
         this.scene.add.existing(this)

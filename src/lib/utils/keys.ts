@@ -2,7 +2,8 @@
 export const sprites = {
     KNIGHT: 'knight',
     COIN: 'coin',
-    RETICLE: 'reticle'
+    RETICLE: 'reticle',
+    SWORD: 'sword'
 }
 
 //tilemaps & tilesets
@@ -15,7 +16,8 @@ export const tiles = {
 export const anims = {
     IDLE: 'idle',
     MOVE: 'move',
-    COIN_SPIN: 'coinspin'
+    COIN_SPIN: 'coinspin',
+    ATTACK: 'attack'
 }
 
 //scenes

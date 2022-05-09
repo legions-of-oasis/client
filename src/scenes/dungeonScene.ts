@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import { scenes, anims, globals, tiles, sprites } from "../lib/utils/keys";
+import { scenes, anims, globals, tiles, sprites, images } from "../lib/utils/keys";
 import { ClientChannel } from "@geckos.io/client";
 import { SnapshotInterpolation, Vault } from "@geckos.io/snapshot-interpolation";
 import { getContract } from "../lib/eth/contracts";
@@ -9,8 +9,10 @@ import { addresses, contracts } from "../../commons/contracts.mjs"
 import Player from "../lib/plugins/entities/characters/Player";
 import Reticle from "../lib/plugins/ui/Reticle";
 import Sword from "../lib/plugins/entities/weapons/Sword";
+import Chort from "../lib/plugins/entities/characters/Chort";
 
 export class DungeonScene extends Phaser.Scene {
+    enemies!: Phaser.Physics.Arcade.Sprite[]    
     player!: Player
     coin!: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody
     cursors!: Phaser.Types.Input.Keyboard.CursorKeys
@@ -37,11 +39,14 @@ export class DungeonScene extends Phaser.Scene {
     preload() {
         //assets
         this.load.spritesheet(sprites.KNIGHT, '/spritesheets/knight.png', { frameWidth: 15, frameHeight: 22 })
-        this.load.image(tiles.DUNGEON_SET, '/tiles/dungeon.png')
-        this.load.tilemapTiledJSON(tiles.DUNGEON_MAP, '/tiles/dungeon.json')
         this.load.spritesheet(sprites.COIN, '/spritesheets/coin.png', { frameWidth: 6, frameHeight: 7 })
-        this.load.image(sprites.RETICLE, '/spritesheets/reticle.png')
         this.load.spritesheet(sprites.SWORD, '/spritesheets/sword.png', { frameWidth: 16, frameHeight: 22 })
+        this.load.spritesheet(sprites.CHORT, '/spritesheets/chort.png', { frameWidth: 16, frameHeight: 24 })
+        this.load.tilemapTiledJSON(tiles.DUNGEON_MAP, '/tiles/dungeon.json')
+        this.load.image(tiles.DUNGEON_SET, '/tiles/dungeon.png')
+        this.load.image(sprites.RETICLE, '/spritesheets/reticle.png')
+        this.load.image(images.HEALTH_CONTAINER, '/ui/health-container.png')
+        this.load.image(images.HEALTH_BAR, '/ui/health-bar.png')
         
         //inputs
         this.cursors = this.input.keyboard.createCursorKeys()
@@ -71,6 +76,9 @@ export class DungeonScene extends Phaser.Scene {
         const walls = map.createLayer('walls', tileset, 0, 0)
         const overhead = map.createLayer('overhead', tileset, 0, 0)
 
+        //init enemies
+        this.enemies = []
+
         //star sprite
         this.coin = this.physics.add.sprite(240, 70, sprites.COIN)
 
@@ -81,8 +89,28 @@ export class DungeonScene extends Phaser.Scene {
             y: this.initialPos![1],
             key: sprites.KNIGHT,
             speed: 80,
-            id: this.channel!.id!.toString()
-        })
+            id: this.channel!.id!.toString(),
+            hp: 100
+        }).setSize(10, 16)
+
+        //player hit handler
+        this.player.on('hit', (damage: number) => this.handleHit(damage))
+
+        //add chort
+        const chort = new Chort({
+            scene: this,
+            x: 240,
+            y: 100,
+            key: sprites.CHORT,
+            speed: 20,
+            id: 'chort',
+            hp: 50
+        }, this.player)
+        chort.setSize(10, 16)
+        this.enemies.push(chort)
+
+        //start game ui
+        this.scene.run(scenes.GAMEUI_SCENE, {hp: this.player.maxHp, masterScene: this.scene.key})
 
         //camera
         const camera = this.cameras.main
@@ -115,12 +143,14 @@ export class DungeonScene extends Phaser.Scene {
         walls.setDepth(10)
         this.player.setDepth(20)
         this.player.equippedWeapon?.setDepth(21)
+        this.enemies.forEach(e => e.setDepth(22))
         overhead.setDepth(30)
         this.reticle.setDepth(100)
 
         //collision
         walls.setCollisionByProperty({ collides: true })
         this.physics.add.collider(this.player, walls)
+        this.physics.add.collider(this.enemies, walls)
 
         //overlap
         this.physics.add.overlap(this.player, this.coin, () => this.collectCoin())
@@ -146,13 +176,6 @@ export class DungeonScene extends Phaser.Scene {
 
         //get nft balance
         this.getBalance()
-
-        //add event listeners
-        this.input.on('pointerdown', () => {
-            if (!this.input.mousePointer.locked) return
-
-            this.player.equippedWeapon!.attack()
-        })
     }
 
     update() {
@@ -170,6 +193,9 @@ export class DungeonScene extends Phaser.Scene {
 
         //update reticle
         this.reticle!.update()
+
+        //update updatables
+        this.enemies.forEach(o => o.update())
 
         //client prediction
         this.clientPrediction()
@@ -225,6 +251,10 @@ export class DungeonScene extends Phaser.Scene {
         this.scene.sendToBack(this)
     }
 
+    handleHit(damage: number) {
+        this.events.emit('hit', damage)
+    }
+
     async getBalance() {
         //get nft balance
         const manager = getContract(contracts.DUNGEON, this.signer!) as ClaimManagerERC721;
@@ -247,6 +277,22 @@ export class DungeonScene extends Phaser.Scene {
             key: sprites.KNIGHT + '-' + anims.MOVE,
             frameRate: 10,
             frames: this.anims.generateFrameNumbers(sprites.KNIGHT, {
+                start: 4,
+                end: 7
+            })
+        })
+        this.anims.create({
+            key: sprites.CHORT + '-' + anims.MOVE,
+            frameRate: 10,
+            frames: this.anims.generateFrameNumbers(sprites.CHORT, {
+                start: 0,
+                end: 3
+            })
+        })
+        this.anims.create({
+            key: sprites.CHORT + '-' + anims.IDLE,
+            frameRate: 10,
+            frames: this.anims.generateFrameNumbers(sprites.CHORT, {
                 start: 4,
                 end: 7
             })

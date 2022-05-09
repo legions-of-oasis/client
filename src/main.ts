@@ -4,6 +4,7 @@ import { DungeonScene } from './scenes/dungeonScene'
 import { StartScene } from './scenes/landingScene'
 import { ConnectScene } from './scenes/connectScene'
 import ClaimScene from './scenes/claimScene'
+import GameUIScene from './scenes/gameUIScene'
 
 new Phaser.Game({
   type: Phaser.AUTO,
@@ -17,5 +18,5 @@ new Phaser.Game({
     }
   },
   pixelArt: true,
-  scene: [StartScene, ConnectScene, DungeonScene, ClaimScene]
+  scene: [StartScene, ConnectScene, GameUIScene, DungeonScene, ClaimScene]
 })

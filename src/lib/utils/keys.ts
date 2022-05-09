@@ -3,7 +3,8 @@ export const sprites = {
     KNIGHT: 'knight',
     COIN: 'coin',
     RETICLE: 'reticle',
-    SWORD: 'sword'
+    SWORD: 'sword',
+    CHORT: 'chort'
 }
 
 //tilemaps & tilesets
@@ -26,7 +27,7 @@ export const scenes = {
     CONNECT_SCENE: 'connectscene',
     LANDING_SCENE: 'landingscene',
     CLAIM_SCENE: 'claimscene',
-    PRELOADER_SCENE: 'preloaderscene'
+    GAMEUI_SCENE: 'gameuiscene'
 }
 
 //images
@@ -37,7 +38,9 @@ export const images = {
     BTN_WHITE: 'btnwhite',
     BTN_WHITE_PRESSED: 'btnwhitepressed',
     BTN_LIGHTBROWN: 'btnlightbrown',
-    BTN_LIGHTBROWN_PRESSED: 'btnlightbrownpressed'
+    BTN_LIGHTBROWN_PRESSED: 'btnlightbrownpressed',
+    HEALTH_CONTAINER: 'healthcontainer',
+    HEALTH_BAR: 'healthbar'
 }
 
 //fonts

@@ -49,7 +49,7 @@ export class DungeonScene extends Phaser.Scene {
         
         //inputs
         this.cursors = this.input.keyboard.createCursorKeys()
-        this.wasd = this.input.keyboard.addKeys('W,S,A,D')
+        this.wasd = this.input.keyboard.addKeys('W,S,A,D,SHIFT')
 
         //signer
         this.signer = this.registry.get(globals.SIGNER)
@@ -170,6 +170,11 @@ export class DungeonScene extends Phaser.Scene {
             this.physics.pause()
         })
 
+        //add keyboard listeners
+        this.input.keyboard.on('keydown-SHIFT', () => {
+            this.player.dash()
+        })
+
         //get nft balance
         // this.getBalance()
     }
@@ -180,7 +185,8 @@ export class DungeonScene extends Phaser.Scene {
             this.cursors.up.isDown || this.wasd.W.isDown,
             this.cursors.down.isDown || this.wasd.S.isDown,
             this.cursors.left.isDown || this.wasd.A.isDown,
-            this.cursors.right.isDown || this.wasd.D.isDown
+            this.cursors.right.isDown || this.wasd.D.isDown,
+            this.wasd.SHIFT.isDown
         ]
         this.channel.emit('move', movement)
         

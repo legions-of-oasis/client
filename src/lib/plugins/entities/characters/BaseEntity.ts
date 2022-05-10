@@ -18,6 +18,9 @@ export default abstract class BaseEntity extends Phaser.Physics.Arcade.Sprite {
     lastDirectionIsLeft = true
     maxHp: number
     alive = true
+    dashDuration = 150
+    dashCooldown = 200
+    lastDash = 0
 
     constructor(params: IBaseEntityParams) {
         super(params.scene, params.x, params.y, params.key)
@@ -39,6 +42,11 @@ export default abstract class BaseEntity extends Phaser.Physics.Arcade.Sprite {
     moveWithInput(movement: boolean[]) {
         const velocity = this.body.velocity
         const [up, down, left, right] = movement
+        const time = this.scene.time.now
+        let isDashing = time < this.lastDash + this.dashDuration
+
+        if (isDashing) return
+        
         if (up || down || left || right) {
             //up and down
             if (up && down) {
@@ -66,8 +74,8 @@ export default abstract class BaseEntity extends Phaser.Physics.Arcade.Sprite {
 
             //diagonals
             if (velocity?.x != 0 && velocity?.y != 0) {
-                this.setVelocityX(velocity!.x * Math.sqrt(0.5))
-                this.setVelocityY(velocity!.y * Math.sqrt(0.5))
+                const diagonalVelocity = velocity.normalize().scale(this.movementSpeed)
+                this.setVelocity(diagonalVelocity.x, diagonalVelocity.y)
             }
         } else {
             //idle

@@ -63,7 +63,7 @@ export default class Chort extends BaseEntity implements Hittable {
     }
 
     overlapHandler() {
-        this.target?.hit(10, 0.5, this)
+        if (this.alive) this.target?.hit(10, 0.5, this)
     }
 
     hit(damage: number, knockback: number, hitter: Phaser.GameObjects.Sprite): boolean {

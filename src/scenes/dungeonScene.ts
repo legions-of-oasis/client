@@ -4,15 +4,17 @@ import { ClientChannel } from "@geckos.io/client";
 import { SnapshotInterpolation, Vault } from "@geckos.io/snapshot-interpolation";
 import { getContract } from "../lib/eth/contracts";
 import { ethers } from "ethers";
-import { ClaimManagerERC721 } from "../lib/eth/types";
-import { contracts } from "../../commons/contracts.mjs"
 import Player from "../lib/plugins/entities/characters/Player";
 import Reticle from "../lib/plugins/ui/Reticle";
 import Sword from "../lib/plugins/entities/weapons/Sword";
 import Chort from "../lib/plugins/entities/characters/Chort";
+import { Hittable } from "../lib/plugins/entities/interfaces/Hittable";
+import { addresses } from "../commons/contracts";
+import { Entity } from "@geckos.io/snapshot-interpolation/lib/types";
 
 export class DungeonScene extends Phaser.Scene {
-    enemies!: Phaser.Physics.Arcade.Sprite[]    
+    enemies!: Map<string, Hittable>    
+    players!: Map<string, Player>
     player!: Player
     coin!: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody
     cursors!: Phaser.Types.Input.Keyboard.CursorKeys
@@ -21,7 +23,7 @@ export class DungeonScene extends Phaser.Scene {
     channel!: ClientChannel
     SI!: SnapshotInterpolation
     playerVault!: Vault
-    initialPos!: Array<number>
+    initialData!: any
     tick = 0
     balance!: ethers.BigNumber
     signer!: ethers.providers.JsonRpcSigner
@@ -31,9 +33,9 @@ export class DungeonScene extends Phaser.Scene {
         super(scenes.DUNGEON_SCENE)
     }
 
-    init({ channel, initialPos }: { channel: ClientChannel, initialPos: Array<number> }) {
+    init({ channel, initialData }: { channel: ClientChannel, initialData: any }) {
         this.channel = channel
-        this.initialPos = initialPos
+        this.initialData = initialData
     }
 
     preload() {
@@ -78,8 +80,8 @@ export class DungeonScene extends Phaser.Scene {
         //player sprite
         this.player = new Player({
             scene: this,
-            x: this.initialPos![0],
-            y: this.initialPos![1],
+            x: this.initialData.players[0].x,
+            y: this.initialData.players[0].y,
             key: sprites.KNIGHT,
             speed: 80,
             id: this.channel!.id!.toString(),
@@ -87,20 +89,21 @@ export class DungeonScene extends Phaser.Scene {
         })
 
         //init enemies
-        this.enemies = []
+        this.enemies = new Map()
 
         //add chort
-        for (let i=0; i < 5; i ++) {
+        for (let i=0; i < this.initialData.enemies.length; i ++) {
+            const id = this.initialData.enemies[i].name
             const chort = new Chort({
                 scene: this,
-                x: 240 + i * 16,
-                y: 100,
+                x: this.initialData.enemies[i].x,
+                y: this.initialData.enemies[i].y,
                 key: sprites.CHORT,
                 speed: 20,
-                id: 'chort',
+                id,
                 hp: 50
-            }, this.player)
-            this.enemies.push(chort)
+            }, this.channel, this.player)
+            this.enemies.set(id, chort)
         }
 
         //camera
@@ -125,18 +128,21 @@ export class DungeonScene extends Phaser.Scene {
                 scene: this,
                 key: sprites.SWORD,
                 player: this.player,
-                reticle: this.reticle
+                reticle: this.reticle,
+                channel: this.channel,
             })
         )
 
         //start game ui
         this.scene.run(scenes.GAMEUI_SCENE, {maxHp: this.player.maxHp, player: this.player})
 
+        const enemies = Array.from(this.enemies.values())
+
         //add mouseclick event listener
         this.input.on('pointerdown', () => {
             if (!this.input.mousePointer.locked || !this.player.equippedWeapon) return
 
-            this.player.equippedWeapon.attack(this.enemies)
+            this.player.equippedWeapon.attack(enemies)
         })
 
         //z-index
@@ -151,8 +157,8 @@ export class DungeonScene extends Phaser.Scene {
         //collision
         walls.setCollisionByProperty({ collides: true })
         this.physics.add.collider(this.player, walls)
-        this.physics.add.collider(this.enemies, walls)
-        this.physics.add.collider(this.enemies, this.enemies)
+        this.physics.add.collider(enemies, walls)
+        this.physics.add.collider(enemies, enemies)
 
         //server update handler
         this.channel.on('update', (data: any) => {
@@ -185,8 +191,7 @@ export class DungeonScene extends Phaser.Scene {
             this.cursors.up.isDown || this.wasd.W.isDown,
             this.cursors.down.isDown || this.wasd.S.isDown,
             this.cursors.left.isDown || this.wasd.A.isDown,
-            this.cursors.right.isDown || this.wasd.D.isDown,
-            this.wasd.SHIFT.isDown
+            this.cursors.right.isDown || this.wasd.D.isDown
         ]
         this.channel.emit('move', movement)
         
@@ -197,23 +202,30 @@ export class DungeonScene extends Phaser.Scene {
         this.reticle!.update()
 
         //update enemies
-        this.enemies.forEach(o => o.update())
+        // this.enemies.forEach(o => o.update())
+
+        //snapshot interpolation
+        this.snapshotInterpolation()
 
         //client prediction
-        // this.clientPrediction()
+        this.clientPrediction()
 
         //server reconciliation
-        // this.serverReconciliation(movement)
+        this.serverReconciliation(movement)
+    }
+
+    snapshotInterpolation() {
+
     }
 
     clientPrediction() {
         //add player vault snapshot
         this.playerVault.add(
-            this.SI!.snapshot.create(
+            this.SI.snapshot.create(
                 [{
-                    id: this.channel!.id!,
-                    x: this.player!.x,
-                    y: this.player!.y
+                    id: this.channel.id!,
+                    x: this.player.x,
+                    y: this.player.y
                 }]
             )
         )
@@ -221,15 +233,15 @@ export class DungeonScene extends Phaser.Scene {
 
     serverReconciliation(movement: Array<boolean>) {
         const [up, down, left, right] = movement
+        const serverSnapshot = this.SI!.vault.get()
+        if (!serverSnapshot) return
 
         if (this.player) {
-            const serverSnapshot = this.SI!.vault.get()
-            if (!serverSnapshot) return
             const playerSnapshot = this.playerVault.get(serverSnapshot.time, true)
 
-            if (serverSnapshot && playerSnapshot) {
-                const serverPos = (serverSnapshot.state as any)[0]
-                const playerPos = (playerSnapshot.state as any)[0]
+            if (playerSnapshot) {
+                const serverPos = (serverSnapshot.state as {[key: string]: any}).players[0]
+                const playerPos = (playerSnapshot.state as Entity[])[0] as any
 
                 const offsetX = playerPos.x - serverPos.x
                 const offsetY = playerPos.y - serverPos.y
@@ -255,7 +267,7 @@ export class DungeonScene extends Phaser.Scene {
 
     async getBalance() {
         //get nft balance
-        const manager = getContract(contracts.DUNGEON, this.signer!) as ClaimManagerERC721;
+        const manager = getContract(addresses.DUNGEON, this.signer!);
         const balance = await manager.balanceOf(await this.signer!.getAddress())
         this.balance = balance
         console.log(balance)

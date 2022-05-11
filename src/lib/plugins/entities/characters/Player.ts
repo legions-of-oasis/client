@@ -34,7 +34,7 @@ export default class Player extends BaseEntity implements Hittable {
         const isKnockbacked = time < this.lastHit + this.knockbackCooldown
 
         //if not staggered, update movement with input
-        if (!isKnockbacked) super.update([...movement.slice(0, 4)])
+        if (!isKnockbacked) super.update(movement)
 
         //if not in tint period and is tinted and is not dashing, clear all tint
         if (!inTintPeriod && this.isTinted && !this.isDashing()) this.clearTint()

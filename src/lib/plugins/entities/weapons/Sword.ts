@@ -1,3 +1,4 @@
+import { ClientChannel } from '@geckos.io/client'
 import Phaser from 'phaser'
 import { anims, sprites } from '../../../utils/keys'
 import { Weapon } from '../interfaces/Weapon'
@@ -6,12 +7,14 @@ interface ISwordParams {
     scene: Phaser.Scene,
     key: string,
     player: Phaser.Physics.Arcade.Sprite,
-    reticle: Phaser.Physics.Arcade.Sprite
+    reticle: Phaser.Physics.Arcade.Sprite,
+    channel: ClientChannel
 }
 
 export default class Sword extends Phaser.Physics.Arcade.Sprite implements Weapon {
     player: Phaser.Physics.Arcade.Sprite
     reticle: Phaser.Physics.Arcade.Sprite
+    channel: ClientChannel
     damage = 20
     
     constructor(params: ISwordParams) {
@@ -20,6 +23,7 @@ export default class Sword extends Phaser.Physics.Arcade.Sprite implements Weapo
         //init properties
         this.player = params.player
         this.reticle = params.reticle
+        this.channel = params.channel
 
         //add to scene
         this.scene.add.existing(this)
@@ -41,9 +45,10 @@ export default class Sword extends Phaser.Physics.Arcade.Sprite implements Weapo
     }
 
     attack(enemies: Phaser.Physics.Arcade.Sprite[]) {
+        this.channel.emit('attack', this.angle)
         this.anims.play(sprites.SWORD + '-' + anims.ATTACK, true)
-        this.scene.physics.overlap(enemies, this, (enemy: any) => {
-            enemy.hit(this.damage, 2, this.player)
+        this.scene.physics.overlap(enemies, this, (enemy) => {
+           (enemy as any).hit(this.damage, 2, this.player)
         })
     }
 }

@@ -17,5 +17,5 @@
     "skipLibCheck": true,
     "noImplicitAny": false
   },
-  "include": ["src", "../commons/auth.mjs"]
+  "include": ["src", "src/commons/auth.ts"]
 }

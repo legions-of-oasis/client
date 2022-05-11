@@ -1,5 +1,6 @@
 import BaseEntity, { IBaseEntityParams } from "./BaseEntity";
 import { Hittable } from "../interfaces/Hittable";
+import { ClientChannel } from "@geckos.io/client";
 
 export default class Chort extends BaseEntity implements Hittable {
     target?: Hittable
@@ -9,17 +10,41 @@ export default class Chort extends BaseEntity implements Hittable {
     hitCooldown = 300
     knockbackCooldown = 1000
     timeOfDeath = 0
+    pendingHit = 0
+    channel: ClientChannel
 
-    constructor(params: IBaseEntityParams, target?: Hittable ) {
+    constructor(params: IBaseEntityParams, channel: ClientChannel , target?: Hittable) {
         super(params)
 
         if (target) this.setTarget(target)
 
         this.setDrag(50)
         this.setSize(10, 16)
+        this.setName(params.id)
+        this.channel = channel
 
         this.scene.add.existing(this)
         this.scene.physics.world.enable(this)
+
+        this.channel.on(`confirmHit-${params.id}`, (data: any) => {
+            if (this.pendingHit === 0) return
+
+            const { hit } = data
+
+            if (hit) {
+                this.pendingHit = 0
+                return
+            }
+
+            const { x, y } = data
+            this.enableBody(true, x, y, true, true)
+            this.alive = true
+            this.lastHit = 0
+            this.timeOfDeath = 0
+            this.setData('hp', this.getData('hp') + this.pendingHit)
+            this.clearTint()
+            this.pendingHit = 0
+        })
     }
 
     update() {
@@ -68,12 +93,12 @@ export default class Chort extends BaseEntity implements Hittable {
 
     hit(damage: number, knockback: number, hitter: Phaser.GameObjects.Sprite): boolean {
         const time = this.scene.time.now
-        if (this.isOnHitCooldown()) return false
-        if (!this.alive) return false
+        if (this.isOnHitCooldown() || !this.alive) return false
 
         const newHealth = this.getData('hp') - damage
         this.setData('hp', newHealth)
         this.lastHit = time
+        this.pendingHit = damage
 
         const angle = Phaser.Math.Angle.Between(this.x, this.y, hitter.x, hitter.y)
         const oppoVelocity = this.scene.physics.velocityFromAngle(Phaser.Math.RadToDeg(angle) + 180, this.movementSpeed * knockback)

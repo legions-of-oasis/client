@@ -1,14 +1,13 @@
 import { ethers } from "ethers"
 import { ClaimManagerERC721__factory, ClaimVerifier__factory } from "./types"
-import { addresses } from "../../../commons/contracts.mjs"
 
 const factories = {
-    CLAIM_VERIFIER: ClaimVerifier__factory,
-    DUNGEON: ClaimManagerERC721__factory
+    "0x50b13bBD3BA1763A15DE9401E4e91b4846383b2f": ClaimVerifier__factory,
+    "0x51FF0944cE18d2F82fEA4942CE06b038e8Ac8451": ClaimManagerERC721__factory
 }
 
-export const getContract = (name: string, signer: ethers.Signer) => {
-    const factory = factories[name]
-    const contract = new factory(signer).attach(addresses[name])
+export const getContract = (address: string, signer: ethers.Signer) => {
+    const factory = factories[address]
+    const contract = new factory(signer).attach(address)
     return contract
 }

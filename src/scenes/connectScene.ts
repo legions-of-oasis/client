@@ -36,10 +36,10 @@ export class ConnectScene extends Scene {
 				text.setText(`error ${error.status}: ${error.statusText}. ${error.message}`)
 			}
 
-			channel.on('ready', (initialPos) => {
+			channel.on('ready', (initialData) => {
 				text.setText('connected!')
 				setTimeout(() => {
-					this.scene.start(scenes.DUNGEON_SCENE, { channel, initialPos })
+					this.scene.start(scenes.DUNGEON_SCENE, { channel, initialData })
 				}, 500)
 			})
 		})

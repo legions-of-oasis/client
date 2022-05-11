@@ -3,7 +3,7 @@ import Phaser from 'phaser'
 import { ClaimVerifier } from '../lib/eth/types'
 import { getContract } from '../lib/eth/contracts'
 import { images, scenes, globals } from '../lib/utils/keys'
-import { addresses, contracts } from '../../commons/contracts.mjs'
+import { addresses } from '../commons/contracts.js'
 import { Button } from '../lib/plugins/ui/Button'
 
 export default class ClaimScene extends Phaser.Scene {
@@ -78,9 +78,9 @@ export default class ClaimScene extends Phaser.Scene {
     async claim() {
         if (!this.sig) return
         
-        const claimVerifier = getContract(contracts.CLAIM_VERIFIER, this.signer!) as ClaimVerifier
+        const claimVerifier = getContract(addresses.CLAIM_VERIFIER, this.signer!) as ClaimVerifier
         const address = await this.signer!.getAddress()
-        const request = addresses[this.contract]
+        const request = addresses.DUNGEON
         const deadline = ethers.constants.MaxUint256
         const receiver = address
         const { v, r, s } = ethers.utils.splitSignature(this.sig)

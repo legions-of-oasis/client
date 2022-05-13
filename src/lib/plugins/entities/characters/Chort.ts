@@ -23,9 +23,9 @@ export default class Chort extends BaseEntity {
 
         this.player = player
 
-        this.scene.physics.add.overlap(this, this.player, () => {
-            this.player.hit(this, 1)
-        })
+        // this.scene.physics.add.overlap(this, this.player, () => {
+        //     this.player.hit(this, 1)
+        // })
 
         // this.channel.on(`confirmHit-${params.id}`, (data: any) => {
         //     if (this.pendingHit === 0) return

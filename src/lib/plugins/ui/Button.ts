@@ -1,5 +1,5 @@
 import Phaser from 'phaser'
-import NinePatch2 from 'phaser3-rex-plugins/plugins/ninepatch2.js'
+import NinePatch2 from 'phaser3-rex-plugins/plugins/ninepatch2'
 import { fonts, images } from '../../utils/keys'
 
 export class Button extends Phaser.GameObjects.Container {

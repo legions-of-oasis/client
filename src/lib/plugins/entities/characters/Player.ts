@@ -142,17 +142,17 @@ export default class Player extends BaseEntity {
     update(movement?: boolean[]) {
         if (!this.isStaggered() && !this.isDashing()) this.moveWithInput(movement!)
         this.equippedWeapon?.update()
-        this.updateState()
+        // this.updateState()
         super.update()
     }
 
-    updateState() {
-        const time = this.scene.time.now
+    // updateState() {
+    //     const time = this.scene.time.now
 
-        if (this.state === states.HIT) {
-            if (time > this.hitTintDuration && time < this.hitCooldown) this.setState(states.HITCOOLDOWN)
-        }
-    }
+    //     if (this.state === states.HIT) {
+    //         if (time > this.hitTintDuration && time < this.hitCooldown) this.setState(states.HITCOOLDOWN)
+    //     }
+    // }
 
     moveWithInput(movement: boolean[]) {
         const velocity = this.body.velocity
@@ -231,6 +231,9 @@ export default class Player extends BaseEntity {
         //set last hit time
         this.lastHit = time
 
+        //set hitcooldown state after tint state
+        this.scene.time.delayedCall(this.hitTintDuration, () => this.setState(states.HITCOOLDOWN))
+
         //get angle between hitter and player
         const angle = Phaser.Math.Angle.Between(this.x, this.y, hitter.x, hitter.y)
 
@@ -246,7 +249,7 @@ export default class Player extends BaseEntity {
 
         this.equippedWeapon.renderAttacking()
 
-        channel.emit('attack', { time: serverTime, x: this.equippedWeapon.x, y: this.equippedWeapon.y }, { reliable: true })
+        channel.emit('attack', { time: serverTime, x: this.x, y: this.y }, { reliable: true })
     }
 
     isOnHitCooldown() {

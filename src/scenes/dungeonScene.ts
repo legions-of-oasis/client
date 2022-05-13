@@ -167,25 +167,25 @@ export class DungeonScene extends Phaser.Scene {
         this.physics.add.collider(enemies, walls)
         this.physics.add.collider(enemies, enemies)
 
-        // //server update handler
-        // this.channel.on('update', (data: any) => {
-        //     this.SI.snapshot.add(data)
-        // })
+        //server update handler
+        this.channel.on('update', (data: any) => {
+            this.SI.snapshot.add(data)
+        })
 
-        // //claim handler
-        // this.channel.on('claim', sig => {
-        //     this.scene.get(scenes.CLAIM_SCENE).data.set('sig', sig)
-        //     console.log("packet signature: ", sig)
-        // })
+        //claim handler
+        this.channel.on('claim', sig => {
+            this.scene.get(scenes.CLAIM_SCENE).data.set('sig', sig)
+            console.log("packet signature: ", sig)
+        })
 
-        // // pause physics when disconnected
-        // this.channel.onDisconnect(() => {
-        //     this.physics.pause()
-        // })
+        // pause physics when disconnected
+        this.channel.onDisconnect(() => {
+            this.physics.pause()
+        })
 
         //add keyboard listeners
         this.input.keyboard.on('keydown-SHIFT', () => {
-            // this.channel.emit('dash')
+            this.channel.emit('dash')
             this.player.dash()
         })
 
@@ -201,7 +201,7 @@ export class DungeonScene extends Phaser.Scene {
             this.cursors.left.isDown || this.wasd.A.isDown,
             this.cursors.right.isDown || this.wasd.D.isDown
         ]
-        // this.channel.emit('input', [...movement, Phaser.Math.Angle.Between(this.player.x, this.player.y, this.reticle.x, this.reticle.y)])
+        this.channel.emit('input', [...movement, Phaser.Math.RadToDeg(Phaser.Math.Angle.Between(this.player.x, this.player.y, this.reticle.x, this.reticle.y))])
 
         //update movements
         this.player!.update(movement)

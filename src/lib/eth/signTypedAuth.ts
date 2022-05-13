@@ -1,5 +1,5 @@
 import { JsonRpcSigner } from "@ethersproject/providers"
-import generateTypedAuth from "../../../commons/auth.mjs"
+import generateTypedAuth from "../../commons/auth.js"
 
 const signTypedAuth = async (signer: JsonRpcSigner): Promise<{ sig: string, address: string }> => {
 

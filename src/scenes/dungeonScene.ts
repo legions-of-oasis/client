@@ -8,12 +8,12 @@ import Player from "../lib/plugins/entities/characters/Player";
 import Reticle from "../lib/plugins/ui/Reticle";
 import Sword from "../lib/plugins/entities/weapons/Sword";
 import Chort from "../lib/plugins/entities/characters/Chort";
-import { Hittable } from "../lib/plugins/entities/interfaces/Hittable";
 import { addresses } from "../commons/contracts";
 import { Entity } from "@geckos.io/snapshot-interpolation/lib/types";
+import BaseEntity from "../lib/plugins/entities/characters/BaseEntity";
 
 export class DungeonScene extends Phaser.Scene {
-    enemies!: Map<string, Hittable>    
+    enemies!: Map<string, BaseEntity>
     players!: Map<string, Player>
     player!: Player
     coin!: Phaser.Types.Physics.Arcade.SpriteWithDynamicBody
@@ -28,6 +28,7 @@ export class DungeonScene extends Phaser.Scene {
     balance!: ethers.BigNumber
     signer!: ethers.providers.JsonRpcSigner
     reticle!: Reticle
+    address!: string
 
     constructor() {
         super(scenes.DUNGEON_SCENE)
@@ -36,6 +37,7 @@ export class DungeonScene extends Phaser.Scene {
     init({ channel, initialData }: { channel: ClientChannel, initialData: any }) {
         this.channel = channel
         this.initialData = initialData
+        this.address = this.channel.userData['address']
     }
 
     preload() {
@@ -43,12 +45,12 @@ export class DungeonScene extends Phaser.Scene {
         this.load.spritesheet(sprites.KNIGHT, '/spritesheets/knight.png', { frameWidth: 15, frameHeight: 22 })
         this.load.spritesheet(sprites.SWORD, '/spritesheets/sword.png', { frameWidth: 16, frameHeight: 22 })
         this.load.spritesheet(sprites.CHORT, '/spritesheets/chort.png', { frameWidth: 16, frameHeight: 24 })
-        this.load.tilemapTiledJSON(tiles.DUNGEON_MAP, '/tiles/dungeon.json')
-        this.load.image(tiles.DUNGEON_SET, '/tiles/dungeon.png')
+        this.load.tilemapTiledJSON(tiles.DUNGEON_MAP, '/tiles/dungeon-tilemap.json')
+        this.load.image(tiles.DUNGEON_SET, '/tiles/dungeon-tileset.png')
         this.load.image(sprites.RETICLE, '/spritesheets/reticle.png')
         this.load.image(images.HEALTH_CONTAINER, '/ui/health-container.png')
         this.load.image(images.HEALTH_BAR, '/ui/health-bar.png')
-        
+
         //inputs
         this.cursors = this.input.keyboard.createCursorKeys()
         this.wasd = this.input.keyboard.addKeys('W,S,A,D,SHIFT')
@@ -77,23 +79,30 @@ export class DungeonScene extends Phaser.Scene {
         const walls = map.createLayer('walls', tileset, 0, 0)
         const overhead = map.createLayer('overhead', tileset, 0, 0)
 
-        //player sprite
-        this.player = new Player({
-            scene: this,
-            x: this.initialData.players[0].x,
-            y: this.initialData.players[0].y,
-            key: sprites.KNIGHT,
-            speed: 80,
-            id: this.channel!.id!.toString(),
-            hp: 100
+        this.players = new Map()
+
+        //players sprite
+        this.initialData.players.forEach(player => {
+            const player_ = new Player({
+                scene: this,
+                x: player.x,
+                y: player.y,
+                key: sprites.KNIGHT,
+                speed: 80,
+                id: player.id,
+                hp: 100
+            })
+            this.players.set(player.id, player_)
         })
+
+        this.player = this.players.get(this.address)!
 
         //init enemies
         this.enemies = new Map()
 
         //add chort
-        for (let i=0; i < this.initialData.enemies.length; i ++) {
-            const id = this.initialData.enemies[i].name
+        for (let i = 0; i < this.initialData.enemies.length; i++) {
+            const id = this.initialData.enemies[i].id
             const chort = new Chort({
                 scene: this,
                 x: this.initialData.enemies[i].x,
@@ -102,7 +111,7 @@ export class DungeonScene extends Phaser.Scene {
                 speed: 20,
                 id,
                 hp: 50
-            }, this.channel, this.player)
+            }, this.player)
             this.enemies.set(id, chort)
         }
 
@@ -123,26 +132,24 @@ export class DungeonScene extends Phaser.Scene {
         })
 
         //set equipped weapon
-        this.player.setEquippedWeapon(
-            new Sword({
-                scene: this,
-                key: sprites.SWORD,
-                player: this.player,
-                reticle: this.reticle,
-                channel: this.channel,
-            })
-        )
+        this.player.equippedWeapon = new Sword({
+            scene: this,
+            key: sprites.SWORD,
+            player: this.player,
+            reticle: this.reticle,
+            // channel: this.channel,
+        })
 
         //start game ui
-        this.scene.run(scenes.GAMEUI_SCENE, {maxHp: this.player.maxHp, player: this.player})
+        this.scene.run(scenes.GAMEUI_SCENE, { maxHp: this.player.maxHp, player: this.player })
 
         const enemies = Array.from(this.enemies.values())
 
         //add mouseclick event listener
         this.input.on('pointerdown', () => {
-            if (!this.input.mousePointer.locked || !this.player.equippedWeapon) return
+            if (!this.input.mousePointer.locked) return
 
-            this.player.equippedWeapon.attack(enemies)
+            this.player.attack(this.channel, this.SI.serverTime)
         })
 
         //z-index
@@ -155,29 +162,30 @@ export class DungeonScene extends Phaser.Scene {
         this.reticle.setDepth(100)
 
         //collision
-        walls.setCollisionByProperty({ collides: true })
+        walls.setCollisionByProperty({ collide: true })
         this.physics.add.collider(this.player, walls)
         this.physics.add.collider(enemies, walls)
         this.physics.add.collider(enemies, enemies)
 
-        //server update handler
-        this.channel.on('update', (data: any) => {
-            this.SI.snapshot.add(data)
-        })
+        // //server update handler
+        // this.channel.on('update', (data: any) => {
+        //     this.SI.snapshot.add(data)
+        // })
 
-        //claim handler
-        this.channel.on('claim', sig => {
-            this.scene.get(scenes.CLAIM_SCENE).data.set('sig', sig)
-            console.log("packet signature: ", sig)
-        })
+        // //claim handler
+        // this.channel.on('claim', sig => {
+        //     this.scene.get(scenes.CLAIM_SCENE).data.set('sig', sig)
+        //     console.log("packet signature: ", sig)
+        // })
 
-        // pause physics when disconnected
-        this.channel.onDisconnect(() => {
-            this.physics.pause()
-        })
+        // // pause physics when disconnected
+        // this.channel.onDisconnect(() => {
+        //     this.physics.pause()
+        // })
 
         //add keyboard listeners
         this.input.keyboard.on('keydown-SHIFT', () => {
+            // this.channel.emit('dash')
             this.player.dash()
         })
 
@@ -193,8 +201,8 @@ export class DungeonScene extends Phaser.Scene {
             this.cursors.left.isDown || this.wasd.A.isDown,
             this.cursors.right.isDown || this.wasd.D.isDown
         ]
-        this.channel.emit('move', movement)
-        
+        // this.channel.emit('input', [...movement, Phaser.Math.Angle.Between(this.player.x, this.player.y, this.reticle.x, this.reticle.y)])
+
         //update movements
         this.player!.update(movement)
 
@@ -205,13 +213,13 @@ export class DungeonScene extends Phaser.Scene {
         // this.enemies.forEach(o => o.update())
 
         //snapshot interpolation
-        this.snapshotInterpolation()
+        // this.snapshotInterpolation()
 
         //client prediction
-        this.clientPrediction()
+        // this.clientPrediction()
 
         //server reconciliation
-        this.serverReconciliation(movement)
+        // this.serverReconciliation(movement)
     }
 
     snapshotInterpolation() {
@@ -240,7 +248,7 @@ export class DungeonScene extends Phaser.Scene {
             const playerSnapshot = this.playerVault.get(serverSnapshot.time, true)
 
             if (playerSnapshot) {
-                const serverPos = (serverSnapshot.state as {[key: string]: any}).players[0]
+                const serverPos = (serverSnapshot.state as { [key: string]: any }).players[0]
                 const playerPos = (playerSnapshot.state as Entity[])[0] as any
 
                 const offsetX = playerPos.x - serverPos.x
@@ -272,7 +280,7 @@ export class DungeonScene extends Phaser.Scene {
         this.balance = balance
         console.log(balance)
     }
-    
+
     createAnims() {
         //anims
         this.anims.create({

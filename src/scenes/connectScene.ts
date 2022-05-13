@@ -16,32 +16,52 @@ export class ConnectScene extends Scene {
 	}
 
 	create() {
-        //set bg color
-        this.cameras.main.setBackgroundColor('0x171717')
+		//set bg color
+		this.cameras.main.setBackgroundColor('0x171717')
 
 		const { width, height } = this.scale
 		const text = this.add.text(width * 0.5, height * 0.5, 'logging in to server...').setOrigin(0.5, 0.5)
 
 		const host = import.meta.env.VITE_HOST ? import.meta.env.VITE_HOST : "http://localhost"
 
-		const channel = geckos({
-			url: host,
-			port: 9208,
-			authorization: `${this.address} ${this.sig}`,
-		})
-		
-		channel.onConnect(error => {
-			if (error) {
-				console.error(error.message)
-				text.setText(`error ${error.status}: ${error.statusText}. ${error.message}`)
-			}
+		// const channel = geckos({
+		// 	url: host,
+		// 	port: 9208,
+		// 	authorization: `${this.address} ${this.sig}`,
+		// })
 
-			channel.on('ready', (initialData) => {
-				text.setText('connected!')
-				setTimeout(() => {
-					this.scene.start(scenes.DUNGEON_SCENE, { channel, initialData })
-				}, 500)
-			})
-		})
+		// channel.onConnect(error => {
+		// 	if (error) {
+		// 		console.error(error.message)
+		// 		text.setText(`error ${error.status}: ${error.statusText}. ${error.message}`)
+		// 	}
+
+		// 	channel.on('ready', (initialData) => {
+		// 		text.setText('connected!')
+		// 		setTimeout(() => {
+		// 			this.scene.start(scenes.DUNGEON_SCENE, { channel, initialData })
+		// 		}, 500)
+		// 	})
+		// })
+		const channel = {
+			userData: {
+				address: this.address
+			}
+		}
+		const initialData = {
+            players: [{
+                x: 240,
+                y: 260,
+                id: this.address
+            }],
+            enemies: [{
+                x: 240,
+                y: 100,
+                id: 'chort-0'
+            }]
+        }
+		setTimeout(() => {
+			this.scene.start(scenes.DUNGEON_SCENE, { channel, initialData })
+		}, 500)
 	}
 }

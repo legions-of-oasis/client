@@ -1,5 +1,5 @@
 
 
-export interface Weapon extends Phaser.Physics.Arcade.Sprite {
-    attack: (enemies: Phaser.Physics.Arcade.Sprite[]) => void
+export interface Weapon extends Phaser.GameObjects.Sprite {
+    renderAttacking: () => void
 }

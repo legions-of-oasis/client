@@ -8,7 +8,7 @@ const signTypedAuth = async (signer: JsonRpcSigner): Promise<{ sig: string, addr
     const host = import.meta.env.VITE_HOST ? import.meta.env.VITE_HOST : "http://localhost:9208"
 
     //get challenge
-    const res = await fetch(host + "/challenge", {
+    let res = await fetch(host + "/challenge", {
         method: "POST",
         body: address,
     })
@@ -22,6 +22,22 @@ const signTypedAuth = async (signer: JsonRpcSigner): Promise<{ sig: string, addr
 
     //generate signature
     const sig = await signer._signTypedData(domain, types, value)
+
+    //generate jwt token
+    res = await fetch(
+        host + "/generateToken", {
+            method: "POST",
+            body: `${address} ${sig}`
+        }
+    )
+
+    if (!res.ok) {
+        throw new Error(`${res.status} ${res.statusText}`)
+    }
+
+    const token = await res.json()
+
+    document.cookie = `token=${token}`
 
     return {
         sig,

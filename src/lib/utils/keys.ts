@@ -27,7 +27,8 @@ export const scenes = {
     CONNECT_SCENE: 'connectscene',
     LANDING_SCENE: 'landingscene',
     CLAIM_SCENE: 'claimscene',
-    GAMEUI_SCENE: 'gameuiscene'
+    GAMEUI_SCENE: 'gameuiscene',
+    MAINMENU_SCENE: 'mainmenuscene'
 }
 
 //images

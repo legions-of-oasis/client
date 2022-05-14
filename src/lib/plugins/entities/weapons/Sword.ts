@@ -30,8 +30,8 @@ export default class Sword extends Phaser.GameObjects.Sprite implements Weapon {
         // this.setSize(20, 20)
     }
 
-    update() {
-        let angle = Phaser.Math.Angle.Between(this.player.x, this.player.y, this.reticle.x, this.reticle.y)
+    update(aimAngle?: number) {
+        let angle = aimAngle ? Phaser.Math.DegToRad(aimAngle) : Phaser.Math.Angle.Between(this.player.x, this.player.y, this.reticle.x, this.reticle.y)
         const newPos = Phaser.Math.RotateTo({x: this.player.x, y: this.player.y + 6}, this.player.x, this.player.y + 6, angle, 15)
 
         this.setPosition(newPos.x, newPos.y)

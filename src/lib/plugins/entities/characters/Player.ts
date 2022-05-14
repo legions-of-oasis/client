@@ -123,6 +123,7 @@ export default class Player extends BaseEntity {
     staggerDuration: number
     hitTintDuration: number
     equippedWeapon?: Weapon
+    aimAngle?: number
 
     constructor(params: IBaseEntityParams, equippedWeapon?: Weapon) {
         super(params)
@@ -139,9 +140,9 @@ export default class Player extends BaseEntity {
         this.equippedWeapon = equippedWeapon
     }
 
-    update(movement?: boolean[]) {
-        if (!this.isStaggered() && !this.isDashing()) this.moveWithInput(movement!)
-        this.equippedWeapon?.update()
+    update(movement?: boolean[], aimAngle?: number) {
+        if (!this.isStaggered() && !this.isDashing() && movement) this.moveWithInput(movement.slice(0, 4))
+        this.equippedWeapon?.update(aimAngle)
         // this.updateState()
         super.update()
     }

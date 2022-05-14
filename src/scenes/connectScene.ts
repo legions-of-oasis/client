@@ -1,18 +1,21 @@
 import { geckos } from '@geckos.io/client'
 import { Scene } from 'phaser'
+import { roomModes } from '../commons/roomModes'
 import { scenes } from '../lib/utils/keys'
 
 export class ConnectScene extends Scene {
-	sig?: string
-	address?: string
+	address!: string
+	roomMode!: roomModes
+	roomId!: string
 
 	constructor() {
 		super(scenes.CONNECT_SCENE)
 	}
 
-	init({ sig, address }: { sig: string, address: string }) {
-		this.sig = sig
+	init({ address, roomMode, roomId }: { address: string, roomMode: roomModes, roomId: string }) {
 		this.address = address
+		this.roomMode = roomMode
+		this.roomId = roomId
 	}
 
 	create() {
@@ -24,44 +27,45 @@ export class ConnectScene extends Scene {
 
 		const host = import.meta.env.VITE_HOST ? import.meta.env.VITE_HOST : "http://localhost"
 
-		// const channel = geckos({
-		// 	url: host,
-		// 	port: 9208,
-		// 	authorization: `${this.address} ${this.sig}`,
-		// })
-
-		// channel.onConnect(error => {
-		// 	if (error) {
-		// 		console.error(error.message)
-		// 		text.setText(`error ${error.status}: ${error.statusText}. ${error.message}`)
-		// 	}
-
-		// 	channel.on('ready', (initialData) => {
-		// 		text.setText('connected!')
-		// 		setTimeout(() => {
-		// 			this.scene.start(scenes.DUNGEON_SCENE, { channel, initialData })
-		// 		}, 500)
-		// 	})
-		// })
-		const channel = {
-			userData: {
-				address: this.address
-			}
+		let token = document.cookie
+			.split('; ')
+			.find(row => row.startsWith('token='))
+		if(!token) {
+			console.error("no token cookie")
+			return
 		}
-		const initialData = {
-            players: [{
-                x: 240,
-                y: 260,
-                id: this.address
-            }],
-            enemies: [{
-                x: 240,
-                y: 100,
-                id: 'chort-0'
-            }]
-        }
-		setTimeout(() => {
-			this.scene.start(scenes.DUNGEON_SCENE, { channel, initialData })
-		}, 500)
+		token = token.split('=')[1]
+
+		const channel = geckos({
+			url: host,
+			port: 9208,
+			authorization: `${this.address} ${token} ${this.roomMode} ${this.roomId}`,
+		})
+
+		channel.onConnect(error => {
+			if (error) {
+				if (error.status == 401) {
+					this.scene.start(scenes.LANDING_SCENE)
+					document.cookie = 'token=; Max-Age=0; path=/; domain=' + location.hostname
+					return
+				}
+				console.error(error.message)
+				text.setText(`error ${error.status}: ${error.statusText}. ${error.message}`)
+			}
+
+			channel.on('roomId', (roomId) => {
+				text.setText("room ID: " + roomId)
+			})
+
+			// channel.emit('start')
+
+			channel.on('ready', (initialData) => {
+				// text.setText('connected!')
+				console.log(initialData)
+				// setTimeout(() => {
+				// 	this.scene.start(scenes.DUNGEON_SCENE, { channel, initialData })
+				// }, 500)
+			})
+		})
 	}
 }

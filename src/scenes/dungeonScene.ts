@@ -11,7 +11,6 @@ import Chort from "../lib/plugins/entities/characters/Chort";
 import { addresses } from "../commons/contracts";
 import { Entity } from "@geckos.io/snapshot-interpolation/lib/types";
 import BaseEntity from "../lib/plugins/entities/characters/BaseEntity";
-import { states } from "../commons/states";
 
 export class DungeonScene extends Phaser.Scene {
     enemies!: Map<string, BaseEntity>
@@ -170,37 +169,37 @@ export class DungeonScene extends Phaser.Scene {
         })
 
         //state update handler
-        this.channel.on('stateUpdate', ({ id, state }: { id: string, state: states }) => {
-            const entity = this.players.get(id) ?? this.enemies.get(id)
+        this.channel.on('stateUpdate', (data: any) => {
+            const entity = this.players.get(data.id) ?? this.enemies.get(data.id)
 
             if (!entity) {
-                console.log('stateUpdate: entity ', id, ' not found')
+                console.log('stateUpdate: entity ', data.id, ' not found')
                 return
             }
 
-            entity.setState(state)
+            entity.setState(data.state)
         })
 
-        this.channel.on('hpUpdatePlayer', ({ id, hp }: { id: string, hp: number }) => {
-            const player = this.players.get(id)
+        this.channel.on('hpUpdatePlayer', (data: any) => {
+            const player = this.players.get(data.id)
 
             if (!player) {
-                console.log('hpUpdatePlayer: player ', id, ' not found')
+                console.log('hpUpdatePlayer: player ', data.id, ' not found')
                 return
             }
 
-            player.setData('hp', hp)
+            player.setData('hp', data.hp)
         })
 
-        this.channel.on('hpUpdateEnemy', ({ id, hp }: { id: string, hp: number }) => {
-            const enemy = this.enemies.get(id)
+        this.channel.on('hpUpdateEnemy', (data: any) => {
+            const enemy = this.enemies.get(data.id)
 
             if (!enemy) {
-                console.log('hpUpdateEnemy: enemy ', id, ' not found')
+                console.log('hpUpdateEnemy: enemy ', data.id, ' not found')
                 return
             }
 
-            enemy.setData('hp', hp)
+            enemy.setData('hp', data.hp)
         })
 
         //claim handler
@@ -273,10 +272,10 @@ export class DungeonScene extends Phaser.Scene {
                 const player = this.players.get(id)
 
                 if (player) {
-                    player.lastDirectionIsLeft = x < player.x
-                    player.setX(x)
-                    player.setY(y)
-                    player.aimAngle = angle
+                    player.lastDirectionIsLeft = x! < player.x
+                    player.setX(x as number)
+                    player.setY(y as number)
+                    player.aimAngle = angle as number
                 } else {
                     const newPlayer = new Player({
                         hp: 100,
@@ -284,10 +283,10 @@ export class DungeonScene extends Phaser.Scene {
                         key: sprites.KNIGHT,
                         scene: this,
                         speed: 80,
-                        x,
-                        y
+                        x: x as number,
+                        y: y as number
                     })
-                    newPlayer.aimAngle = angle
+                    newPlayer.aimAngle = angle as number
                     this.players.set(id, newPlayer)
                 }
             })
@@ -304,9 +303,9 @@ export class DungeonScene extends Phaser.Scene {
                 const enemy = this.enemies.get(id)
 
                 if (enemy) {
-                    enemy.lastDirectionIsLeft = x < enemy.x
-                    enemy.setX(x)
-                    enemy.setY(y)
+                    enemy.lastDirectionIsLeft = x! < enemy.x
+                    enemy.setX(x as number)
+                    enemy.setY(y as number)
                 } else {
                     const newEnemy = new Chort({
                         hp: 50,
@@ -314,8 +313,8 @@ export class DungeonScene extends Phaser.Scene {
                         key: sprites.CHORT,
                         scene: this,
                         speed: 20,
-                        x,
-                        y,
+                        x: x as number,
+                        y: y as number,
                     }, this.player)
                     this.enemies.set(id, newEnemy)
                 }
@@ -327,7 +326,7 @@ export class DungeonScene extends Phaser.Scene {
         //add player vault snapshot
         const snapshot = this.SI.snapshot.create(
             [{
-                id: this.channel.userData.address,
+                id: (this.channel.userData as any).address,
                 x: this.player.x,
                 y: this.player.y
             }]
@@ -345,7 +344,7 @@ export class DungeonScene extends Phaser.Scene {
         const playerSnapshot = this.playerVault.get(serverSnapshot.time, true)
         if (!playerSnapshot) return
 
-        const serverPos = (serverSnapshot.state.players as {id, x, y}[]).find((p) => p.id === this.player.name)
+        const serverPos = ((serverSnapshot.state as any).players as {id, x, y}[]).find((p) => p.id === this.player.name)
         if (!serverPos) return
 
 

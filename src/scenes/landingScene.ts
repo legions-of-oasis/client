@@ -4,7 +4,6 @@ import connectWallet from "../lib/eth/connectWallet.js"
 import signTypedAuth from "../lib/eth/signTypedAuth.js"
 import eventsCenter from "../lib/utils/eventsCenter"
 import { Button } from "../lib/plugins/ui/Button"
-import { roomModes } from "../commons/roomModes"
 
 export class StartScene extends Phaser.Scene {
     button?: Button
@@ -72,18 +71,20 @@ export class StartScene extends Phaser.Scene {
     async handleClick() {
         //authenticate
         if (this.signer) {
+
+            //jwt token stored
             const token = document.cookie
                 .split('; ')
                 .find(row => row.startsWith('token='))
             if (token) {
-                const address = await this.signer.getAddress()
-                this.scene.start(scenes.CONNECT_SCENE, { address, roomMode: roomModes.PUBLIC_CREATE, roomId: '' })
+                this.scene.start(scenes.MAINMENU_SCENE)
                 return
             }
             
+            //fresh sign in
             try {
-                const { address } = await signTypedAuth(this.signer)
-                this.scene.start(scenes.CONNECT_SCENE, { address, roomMode: roomModes.SINGLEPLAYER, roomId: '' })
+                await signTypedAuth(this.signer)
+                this.scene.start(scenes.MAINMENU_SCENE)
             } catch (e) {
                 console.error(e)
             }

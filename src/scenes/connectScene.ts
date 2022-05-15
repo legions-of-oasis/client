@@ -20,10 +20,6 @@ export class ConnectScene extends Scene {
 		this.roomId = roomId
 	}
 
-	preload() {
-		this.load.image(images.BTN_GREY, '/ui/btn-grey.png')
-	}
-
 	create() {
 		//set bg color
 		this.cameras.main.setBackgroundColor('0x171717')
@@ -35,16 +31,22 @@ export class ConnectScene extends Scene {
 		const text = this.add.text(width * 0.5, height * 0.5, 'logging in to server...').setOrigin(0.5, 0.5)
 
 		//add start button
-		const button = new Button({
-			scene: this,
-			height: 100,
-			key: images.BTN_GREY,
-			text: 'START GAME',
-			width: 400,
-			x: width * 0.5,
-			y: height * 0.6
-		})
-
+		if (this.roomMode === roomModes.PRIVATE_CREATE || this.roomMode === roomModes.PUBLIC_CREATE || this.roomMode === roomModes.SINGLEPLAYER) {
+			const button = new Button({
+				scene: this,
+				height: 54,
+				key: images.BTN_GREY,
+				text: 'START GAME',
+				width: 250,
+				x: width * 0.5,
+				y: height * 0.58
+			})
+			button.onClick(() => {
+				this.channel.emit('start')
+			})
+		} else {
+			this.add.text(width * 0.5, height * 0.55, 'waiting for host to start...').setOrigin(0.5)
+		}
 		//server hostname
 		const host = import.meta.env.VITE_HOST ? import.meta.env.VITE_HOST : "http://localhost:9208"
 
@@ -61,14 +63,14 @@ export class ConnectScene extends Scene {
 		//make webrtc connection
 		this.channel = geckos({
 			url: host,
-			port: null,
+			port: null as any,
 			authorization: `${this.address} ${token} ${this.roomMode} ${this.roomId}`,
 		})
 
 		//on connect
 		this.channel.onConnect(error => {
 			if (error) {
-				if (error.status == 401) {
+				if (error.status == 401 || error.status == 403) {
 					this.scene.start(scenes.LANDING_SCENE)
 					document.cookie = 'token=; Max-Age=0; path=/; domain=' + location.hostname
 					return
@@ -90,8 +92,8 @@ export class ConnectScene extends Scene {
 			})
 		})
 
-		button.onClick(() => {
-			this.channel.emit('start')
-		})
+		// button.onClick(() => {
+		// 	this.channel.emit('start')
+		// })
 	}
 }

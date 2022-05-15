@@ -5,7 +5,9 @@ const signTypedAuth = async (signer: JsonRpcSigner): Promise<{ sig: string, addr
 
     const address = await signer.getAddress()
 
-    const host = import.meta.env.VITE_HOST ? import.meta.env.VITE_HOST : "http://localhost:9208"
+    const host = import.meta.env.VITE_HOST ??  "http://localhost:9208"
+
+    const chainId = import.meta.env.VITE_CHAINID ?? 31337
 
     //get challenge
     let res = await fetch(host + "/challenge", {
@@ -18,7 +20,7 @@ const signTypedAuth = async (signer: JsonRpcSigner): Promise<{ sig: string, addr
     }
 
     const challenge = await res.text()
-    const { domain, types, value } = generateTypedAuth(challenge)
+    const { domain, types, value } = generateTypedAuth(challenge, chainId)
 
     //generate signature
     const sig = await signer._signTypedData(domain, types, value)

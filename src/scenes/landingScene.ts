@@ -9,7 +9,7 @@ export class StartScene extends Phaser.Scene {
     button?: Button
     signer?: ethers.providers.JsonRpcSigner
     bg?: Phaser.GameObjects.Image
-    chainId = 31337
+    chainId = import.meta.env.VITE_CHAINID ?? 4
 
     constructor() {
         super(scenes.LANDING_SCENE)

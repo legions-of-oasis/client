@@ -4,7 +4,7 @@ import { ethers } from "ethers"
 import Web3Modal, { getProviderInfo } from "web3modal"
 import eventsCenter from "../utils/eventsCenter"
 
-const targetChainId = import.meta.env.CHAIN_ID ? `0x${import.meta.env.CHAIN_ID.toString(16)}` : '0x7a69'
+const targetChainId = import.meta.env.CHAIN_ID ? `0x${parseInt(import.meta.env.CHAIN_ID).toString(16)}` : '0x7a69'
 
 const connectWallet = async (): Promise<JsonRpcSigner> => {
     const providerOptions = {
@@ -29,7 +29,7 @@ const connectWallet = async (): Promise<JsonRpcSigner> => {
 
     const chainId = await provider.send('eth_chainId', [])
     if (chainId !== targetChainId) {
-        console.log(chainId)
+        console.log("wrong chain id. please change to", targetChainId)
         throw new Error('wrong chain')
     }
 

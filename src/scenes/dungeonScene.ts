@@ -68,7 +68,7 @@ export class DungeonScene extends Phaser.Scene {
         this.createAnims()
 
         //snapshot interpolation
-        this.SI = new SnapshotInterpolation(60)
+        this.SI = new SnapshotInterpolation(30)
         this.playerVault = new Vault()
 
         //tilemap and tileset
@@ -321,40 +321,25 @@ export class DungeonScene extends Phaser.Scene {
                 }
             })
         }
-
-        // const angleSI = this.SI.calcInterpolation('angle(deg)', 'player')
-
-        // if (angleSI) {
-        //     const { state } = angleSI
-
-        //     state.forEach(p => {
-        //         const { id, angle } = p
-        //         if (id === this.player.name) return
-
-        //         const player = this.players.get(id)
-
-        //         if (player) player.aimAngle = angle
-        //     })
-        // }
     }
 
     clientPrediction() {
         //add player vault snapshot
-        this.playerVault.add(
-            this.SI.snapshot.create(
-                [{
-                    id: this.channel.userData.address,
-                    x: this.player.x,
-                    y: this.player.y
-                }]
-            )
+        const snapshot = this.SI.snapshot.create(
+            [{
+                id: this.channel.userData.address,
+                x: this.player.x,
+                y: this.player.y
+            }]
         )
+        this.playerVault.add(snapshot)
     }
 
     serverReconciliation(movement: Array<boolean>) {
+        this.tick++
         const [up, down, left, right] = movement
 
-        const serverSnapshot = this.SI!.vault.get()
+        const serverSnapshot = this.SI.vault.get()
         if (!serverSnapshot) return
 
         const playerSnapshot = this.playerVault.get(serverSnapshot.time, true)
@@ -362,6 +347,7 @@ export class DungeonScene extends Phaser.Scene {
 
         const serverPos = (serverSnapshot.state.players as {id, x, y}[]).find((p) => p.id === this.player.name)
         if (!serverPos) return
+
 
         const playerPos = (playerSnapshot.state as Entity[])[0] as any
 

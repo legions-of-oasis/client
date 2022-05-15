@@ -20,7 +20,7 @@ export default class Player extends BaseEntity {
     constructor(params: IBaseEntityParams, equippedWeapon?: Weapon) {
         super(params)
 
-        this.setSize(10,16)
+        this.body.setSize(10, 16)
         this.setDrag(10)
         this.setName(params.id)
 

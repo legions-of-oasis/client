@@ -81,8 +81,6 @@ export class ConnectScene extends Scene {
 				text.setText("room ID: " + roomId)
 			})
 
-			// this.channel.emit('start')
-
 			this.channel.on('ready', (initialData) => {
 				text.setText('connected!')
 				console.log(initialData)

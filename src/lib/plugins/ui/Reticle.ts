@@ -1,18 +1,19 @@
 import Phaser from 'phaser'
+import Player from '../entities/characters/Player'
 
 interface IReticleParams {
     scene: Phaser.Scene,
     x: number,
     y: number,
     key: string,
-    player: Phaser.GameObjects.Sprite,
+    player: Player,
     camera: Phaser.Cameras.Scene2D.Camera,
     maxRadius: number
 }
 
 export default class Reticle extends Phaser.Physics.Arcade.Sprite {
     pointer: Phaser.Input.Pointer
-    player: Phaser.GameObjects.Sprite
+    player: Player
     camera: Phaser.Cameras.Scene2D.Camera
     offset: Phaser.Math.Vector2 = new Phaser.Math.Vector2(0, 0)
     cameraOffset: Phaser.Math.Vector2 = new Phaser.Math.Vector2(0, 0)
@@ -77,5 +78,7 @@ export default class Reticle extends Phaser.Physics.Arcade.Sprite {
         this.cameraOffset.y /= 4
 
         this.camera.startFollow(this.player, false, 1, 1, - this.cameraOffset.x, - this.cameraOffset.y)
+
+        this.player.aimAngle = Phaser.Math.RadToDeg(Phaser.Math.Angle.Between(this.x, this.y, this.player.x, this.player.y)) + 180
     }
 }

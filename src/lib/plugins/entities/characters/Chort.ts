@@ -1,3 +1,4 @@
+import { states } from "../../../../commons/states";
 import BaseEntity, { IBaseEntityParams } from "./BaseEntity";
 import Player from "./Player";
 
@@ -11,102 +12,24 @@ export default class Chort extends BaseEntity {
     // timeOfDeath = 0
     // pendingHit = 0
     player: Player
+    knockback = 0.5
 
     constructor(params: IBaseEntityParams, player: Player) {
         super(params)
 
-        // if (target) this.setTarget(target)
-
-        // this.setDrag(50)
         this.setSize(10, 16)
         this.setName(params.id)
 
         this.player = player
 
-        // this.scene.physics.add.overlap(this, this.player, () => {
-        //     this.player.hit(this, 1)
-        // })
-
-        // this.channel.on(`confirmHit-${params.id}`, (data: any) => {
-        //     if (this.pendingHit === 0) return
-
-        //     const { hit } = data
-
-        //     if (hit) {
-        //         this.pendingHit = 0
-        //         return
-        //     }
-
-        //     const { x, y } = data
-        //     this.enableBody(true, x, y, true, true)
-        //     this.alive = true
-        //     this.lastHit = 0
-        //     this.timeOfDeath = 0
-        //     this.setData('hp', this.getData('hp') + this.pendingHit)
-        //     this.clearTint()
-        //     this.pendingHit = 0
-        // })
+        this.scene.physics.add.overlap(this, this.player, (_, player) => {
+            if (this.state === states.DYING || this.state === states.DEAD) return
+            (player as Player).hit(this, this.knockback)
+        })
     }
 
     update() {
         super.update()
-
-        // switch (state) {
-        //     case states.IDLE:
-        //         this.clearTint()
-        //         super.update()
-        //         break;
-        //     case states.MOVING:
-        //         this.clearTint()
-        //         super.update()
-        //         break;
-        //     case states.HIT:
-        //         this.setTintFill(0xDDDDDD)
-        //         break;
-        //     case states.HITCOOLDOWN:
-        //         this.setAlpha(this.scene.time.now % 200 < 100 ? 0.1 : 1)
-        //         break;
-        //     case states.DYING:
-                
-        //         break;
-        //     case states.DEAD:
-                
-        //         break;
-        //     default:
-        //         break;
-        // }
-
-        // if (this.alive) super.update()
-        // if (!this.target) {
-        //     return
-        // }
-        // if (!this.chasing) {
-        //     this.chasing = Phaser.Math.Distance.Between(this.x, this.y, this.target.x, this.target.y) < 100
-        // } else {
-            // const time = this.scene.time.now
-            // const inTintPeriod = time < this.lastHit + 50
-            // const isKnockbacked = time < this.lastHit + this.knockbackCooldown
-            // const isDying = time < this.timeOfDeath + 1000
-
-            //set flasing during hit cooldown
-        //     if (this.isOnHitCooldown() && !inTintPeriod) {
-        //         this.setAlpha(time % 200 < 100 ? 0.1 : 1)
-        //     } else {
-        //         this.setAlpha(1)
-        //     }
-            
-        //     //clear tint after tint window
-        //     if (!inTintPeriod && this.isTinted && this.alive) this.clearTint()
-
-        //     //disable body after dead
-        //     if (!isDying && !this.alive) {
-        //         this.disableBody(true, true)
-        //         return
-        //     }
-
-        //     //move if not knockbacked
-        //     if (!isKnockbacked) this.scene.physics.moveToObject(this, this.target, this.movementSpeed)
-        // }
     }
 
     // render(state: states) {

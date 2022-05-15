@@ -40,7 +40,7 @@ export default abstract class BaseEntity extends Phaser.Physics.Arcade.Sprite {
         //animations
         const velocity = this.body.velocity
         if (velocity.x !== 0) this.lastDirectionIsLeft = velocity.x < 0
-        if (velocity?.x != 0 || velocity.y != 0) {
+        if (velocity?.x != 0 || velocity.y != 0 || this.state === states.MOVING) {
             this.setFlipX(this.lastDirectionIsLeft)
             this.anims.play(this.texture.key + '-' + anims.MOVE, true)
         } else {

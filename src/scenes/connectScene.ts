@@ -1,12 +1,14 @@
-import { geckos } from '@geckos.io/client'
+import { ClientChannel, geckos } from '@geckos.io/client'
 import { Scene } from 'phaser'
 import { roomModes } from '../commons/roomModes'
-import { scenes } from '../lib/utils/keys'
+import { Button } from '../lib/plugins/ui/Button'
+import { images, scenes } from '../lib/utils/keys'
 
 export class ConnectScene extends Scene {
 	address!: string
 	roomMode!: roomModes
 	roomId!: string
+	channel!: ClientChannel
 
 	constructor() {
 		super(scenes.CONNECT_SCENE)
@@ -18,15 +20,35 @@ export class ConnectScene extends Scene {
 		this.roomId = roomId
 	}
 
+	preload() {
+		this.load.image(images.BTN_GREY, '/ui/btn-grey.png')
+	}
+
 	create() {
 		//set bg color
 		this.cameras.main.setBackgroundColor('0x171717')
 
+		//get width and height of screen
 		const { width, height } = this.scale
+
+		//add text
 		const text = this.add.text(width * 0.5, height * 0.5, 'logging in to server...').setOrigin(0.5, 0.5)
 
-		const host = import.meta.env.VITE_HOST ? import.meta.env.VITE_HOST : "http://localhost"
+		//add start button
+		const button = new Button({
+			scene: this,
+			height: 100,
+			key: images.BTN_GREY,
+			text: 'START GAME',
+			width: 400,
+			x: width * 0.5,
+			y: height * 0.6
+		})
 
+		//server hostname
+		const host = import.meta.env.VITE_HOST ? import.meta.env.VITE_HOST : "http://localhost:9208"
+
+		//jwt token
 		let token = document.cookie
 			.split('; ')
 			.find(row => row.startsWith('token='))
@@ -36,13 +58,15 @@ export class ConnectScene extends Scene {
 		}
 		token = token.split('=')[1]
 
-		const channel = geckos({
+		//make webrtc connection
+		this.channel = geckos({
 			url: host,
-			port: 9208,
+			port: null,
 			authorization: `${this.address} ${token} ${this.roomMode} ${this.roomId}`,
 		})
 
-		channel.onConnect(error => {
+		//on connect
+		this.channel.onConnect(error => {
 			if (error) {
 				if (error.status == 401) {
 					this.scene.start(scenes.LANDING_SCENE)
@@ -53,19 +77,23 @@ export class ConnectScene extends Scene {
 				text.setText(`error ${error.status}: ${error.statusText}. ${error.message}`)
 			}
 
-			channel.on('roomId', (roomId) => {
+			this.channel.on('roomId', (roomId) => {
 				text.setText("room ID: " + roomId)
 			})
 
-			// channel.emit('start')
+			// this.channel.emit('start')
 
-			channel.on('ready', (initialData) => {
-				// text.setText('connected!')
+			this.channel.on('ready', (initialData) => {
+				text.setText('connected!')
 				console.log(initialData)
-				// setTimeout(() => {
-				// 	this.scene.start(scenes.DUNGEON_SCENE, { channel, initialData })
-				// }, 500)
+				setTimeout(() => {
+					this.scene.start(scenes.DUNGEON_SCENE, { channel: this.channel, initialData })
+				}, 500)
 			})
+		})
+
+		button.onClick(() => {
+			this.channel.emit('start')
 		})
 	}
 }

@@ -11,6 +11,7 @@ import Chort from "../lib/plugins/entities/characters/Chort";
 import { addresses } from "../commons/contracts";
 import { Entity } from "@geckos.io/snapshot-interpolation/lib/types";
 import BaseEntity from "../lib/plugins/entities/characters/BaseEntity";
+import { states } from "../commons/states";
 
 export class DungeonScene extends Phaser.Scene {
     enemies!: Map<string, BaseEntity>
@@ -92,6 +93,11 @@ export class DungeonScene extends Phaser.Scene {
                 id: player.id,
                 hp: 100
             })
+            player_.equippedWeapon = new Sword({
+                scene: this,
+                key: sprites.SWORD,
+                player: player_,
+            })
             this.players.set(player.id, player_)
         })
 
@@ -131,15 +137,6 @@ export class DungeonScene extends Phaser.Scene {
             maxRadius: 150
         })
 
-        //set equipped weapon
-        this.player.equippedWeapon = new Sword({
-            scene: this,
-            key: sprites.SWORD,
-            player: this.player,
-            reticle: this.reticle,
-            // channel: this.channel,
-        })
-
         //start game ui
         this.scene.run(scenes.GAMEUI_SCENE, { maxHp: this.player.maxHp, player: this.player })
 
@@ -172,6 +169,40 @@ export class DungeonScene extends Phaser.Scene {
             this.SI.snapshot.add(data)
         })
 
+        //state update handler
+        this.channel.on('stateUpdate', ({ id, state }: { id: string, state: states }) => {
+            const entity = this.players.get(id) ?? this.enemies.get(id)
+
+            if (!entity) {
+                console.log('stateUpdate: entity ', id, ' not found')
+                return
+            }
+
+            entity.setState(state)
+        })
+
+        this.channel.on('hpUpdatePlayer', ({ id, hp }: { id: string, hp: number }) => {
+            const player = this.players.get(id)
+
+            if (!player) {
+                console.log('hpUpdatePlayer: player ', id, ' not found')
+                return
+            }
+
+            player.setData('hp', hp)
+        })
+
+        this.channel.on('hpUpdateEnemy', ({ id, hp }: { id: string, hp: number }) => {
+            const enemy = this.enemies.get(id)
+
+            if (!enemy) {
+                console.log('hpUpdateEnemy: enemy ', id, ' not found')
+                return
+            }
+
+            enemy.setData('hp', hp)
+        })
+
         //claim handler
         this.channel.on('claim', sig => {
             this.scene.get(scenes.CLAIM_SCENE).data.set('sig', sig)
@@ -201,29 +232,110 @@ export class DungeonScene extends Phaser.Scene {
             this.cursors.left.isDown || this.wasd.A.isDown,
             this.cursors.right.isDown || this.wasd.D.isDown
         ]
-        this.channel.emit('input', [...movement, Phaser.Math.RadToDeg(Phaser.Math.Angle.Between(this.player.x, this.player.y, this.reticle.x, this.reticle.y))])
+        // const aimAngle = Phaser.Math.RadToDeg(Phaser.Math.Angle.Between(this.player.x, this.player.y, this.reticle.x, this.reticle.y))
+        if (this.input.mousePointer.locked) this.channel.emit('input', [...movement, this.player.aimAngle])
 
         //update movements
-        this.player!.update(movement)
+        this.players.forEach(p => {
+            if (p.name === this.player.name){
+                p.update(movement)
+                return
+            }
+            p.update()
+        })
 
         //update reticle
-        this.reticle!.update()
+        this.reticle.update()
 
         //update enemies
-        // this.enemies.forEach(o => o.update())
+        this.enemies.forEach(o => o.update())
 
         //snapshot interpolation
-        // this.snapshotInterpolation()
+        this.snapshotInterpolation()
 
         //client prediction
-        // this.clientPrediction()
+        this.clientPrediction()
 
         //server reconciliation
-        // this.serverReconciliation(movement)
+        this.serverReconciliation(movement)
     }
 
     snapshotInterpolation() {
+        const playerPositionSI = this.SI.calcInterpolation('x y angle(deg)', 'players')
 
+        if (playerPositionSI) {
+            const { state } = playerPositionSI
+
+            state.forEach(p => {
+                const { id, x, y, angle } = p
+                if (id === this.player.name) return
+
+                const player = this.players.get(id)
+
+                if (player) {
+                    player.lastDirectionIsLeft = x < player.x
+                    player.setX(x)
+                    player.setY(y)
+                    player.aimAngle = angle
+                } else {
+                    const newPlayer = new Player({
+                        hp: 100,
+                        id,
+                        key: sprites.KNIGHT,
+                        scene: this,
+                        speed: 80,
+                        x,
+                        y
+                    })
+                    newPlayer.aimAngle = angle
+                    this.players.set(id, newPlayer)
+                }
+            })
+        }
+
+        const enemyPosition = this.SI.calcInterpolation('x y', 'enemies')
+
+        if (enemyPosition) {
+            const { state } = enemyPosition
+
+            state.forEach(e => {
+                const { id, x, y } = e
+
+                const enemy = this.enemies.get(id)
+
+                if (enemy) {
+                    enemy.lastDirectionIsLeft = x < enemy.x
+                    enemy.setX(x)
+                    enemy.setY(y)
+                } else {
+                    const newEnemy = new Chort({
+                        hp: 50,
+                        id,
+                        key: sprites.CHORT,
+                        scene: this,
+                        speed: 20,
+                        x,
+                        y,
+                    }, this.player)
+                    this.enemies.set(id, newEnemy)
+                }
+            })
+        }
+
+        // const angleSI = this.SI.calcInterpolation('angle(deg)', 'player')
+
+        // if (angleSI) {
+        //     const { state } = angleSI
+
+        //     state.forEach(p => {
+        //         const { id, angle } = p
+        //         if (id === this.player.name) return
+
+        //         const player = this.players.get(id)
+
+        //         if (player) player.aimAngle = angle
+        //     })
+        // }
     }
 
     clientPrediction() {
@@ -231,7 +343,7 @@ export class DungeonScene extends Phaser.Scene {
         this.playerVault.add(
             this.SI.snapshot.create(
                 [{
-                    id: this.channel.id!,
+                    id: this.channel.userData.address,
                     x: this.player.x,
                     y: this.player.y
                 }]
@@ -241,27 +353,27 @@ export class DungeonScene extends Phaser.Scene {
 
     serverReconciliation(movement: Array<boolean>) {
         const [up, down, left, right] = movement
+
         const serverSnapshot = this.SI!.vault.get()
         if (!serverSnapshot) return
 
-        if (this.player) {
-            const playerSnapshot = this.playerVault.get(serverSnapshot.time, true)
+        const playerSnapshot = this.playerVault.get(serverSnapshot.time, true)
+        if (!playerSnapshot) return
 
-            if (playerSnapshot) {
-                const serverPos = (serverSnapshot.state as { [key: string]: any }).players[0]
-                const playerPos = (playerSnapshot.state as Entity[])[0] as any
+        const serverPos = (serverSnapshot.state.players as {id, x, y}[]).find((p) => p.id === this.player.name)
+        if (!serverPos) return
 
-                const offsetX = playerPos.x - serverPos.x
-                const offsetY = playerPos.y - serverPos.y
+        const playerPos = (playerSnapshot.state as Entity[])[0] as any
 
-                const isMoving = up || down || left || right
+        const offsetX = playerPos.x - serverPos.x
+        const offsetY = playerPos.y - serverPos.y
 
-                const correction = isMoving ? 60 : 180
+        const isMoving = up || down || left || right
 
-                this.player.setX(this.player.x - (offsetX / correction))
-                this.player.setY(this.player.y - (offsetY / correction))
-            }
-        }
+        const correction = isMoving ? 60 : 180
+
+        this.player.setX(this.player.x - (offsetX / correction))
+        this.player.setY(this.player.y - (offsetY / correction))
     }
 
     // collectCoin() {

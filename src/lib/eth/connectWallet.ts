@@ -4,7 +4,7 @@ import { ethers } from "ethers"
 import Web3Modal, { getProviderInfo } from "web3modal"
 import eventsCenter from "../utils/eventsCenter"
 
-const targetChainId = import.meta.env.CHAINID ? `0x${parseInt(import.meta.env.CHAINID).toString(16)}` : '0x7a69'
+const targetChainId = import.meta.env.VITE_CHAINID ? `0x${parseInt(import.meta.env.VITE_CHAINID).toString(16)}` : '0x7a69'
 
 const connectWallet = async (): Promise<JsonRpcSigner> => {
     const providerOptions = {
